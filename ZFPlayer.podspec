@@ -48,4 +48,11 @@ Pod::Spec.new do |s|
         ijkplayer.dependency 'IJKMediaFramework'
     end
     
+    s.subspec 'All' do |ss|
+      ss.dependency 'ZFPlayer/Core'
+      ss.dependency 'ZFPlayer/ControlView'
+      ss.dependency 'ZFPlayer/AVPlayer'
+      ss.dependency 'ZFPlayer/ijkplayer'
+    end
+    
 end
