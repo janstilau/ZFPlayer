@@ -759,8 +759,10 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     if (self.orientationObserver.fullScreenMode == ZFFullScreenModePortrait) {
         [self.orientationObserver enterPortraitFullScreen:fullScreen animated:animated completion:completion];
     } else {
+        // 默认是 Landscape. 所以, 会执行下面的横版全屏的逻辑.
         UIInterfaceOrientation orientation = UIInterfaceOrientationUnknown;
         orientation = fullScreen? UIInterfaceOrientationLandscapeRight : UIInterfaceOrientationPortrait;
+        // 最终, 是使用 orientationObserver 来进行旋转的处理
         [self.orientationObserver rotateToOrientation:orientation animated:animated completion:completion];
     }
 }
@@ -1052,7 +1054,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
         if ([self.controlView respondsToSelector:@selector(playerDidDisappearInScrollView:)]) {
             [self.controlView playerDidDisappearInScrollView:self];
         }
-       
+        
         if (self.stopWhileNotVisible) { /// stop playing
             if (self.containerType == ZFPlayerContainerTypeView) {
                 [self stopCurrentPlayingView];

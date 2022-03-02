@@ -1,27 +1,3 @@
-//
-//  ZFFullScreenViewController.m
-//  ZFPlayer
-//
-// Copyright (c) 2020年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import "ZFLandscapeViewController.h"
 
 @interface ZFLandscapeViewController ()
@@ -42,30 +18,52 @@
     return self;
 }
 
+/*
+ size
+ The new size for the container’s view.
+
+ coordinator
+ The transition coordinator object managing the size change. You can use this object to animate your changes or get information about the transition that is in progress.
+
+ Discussion
+ UIKit calls this method before changing the size of a presented view controller’s view. You can override this method in your own objects and use it to perform additional tasks related to the size change. For example, a container view controller might use this method to override the traits of its embedded child view controllers. Use the provided coordinator object to animate any changes you make.
+
+ If you override this method in your custom view controllers, always call super at some point in your implementation so that UIKit can forward the size change message appropriately. View controllers forward the size change message to their views and child view controllers. Presentation controllers forward the size change to their presented view controller.
+ */
+/*
+ [self interfaceOrientation:targetOrientation]; 会直接调用到这里. 
+ */
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
-    self.rotating = YES;
+    
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
     if (!UIDeviceOrientationIsValidInterfaceOrientation([UIDevice currentDevice].orientation)) {
         return;
     }
+    
+    self.rotating = YES;
     UIInterfaceOrientation newOrientation = (UIInterfaceOrientation)[UIDevice currentDevice].orientation;
     UIInterfaceOrientation oldOrientation = _currentOrientation;
     if (UIInterfaceOrientationIsLandscape(newOrientation)) {
+        // 在这, 进行了 View 的转移工作.
         if (self.contentView.superview != self.view) {
             [self.view addSubview:self.contentView];
         }
     }
     
     if (oldOrientation == UIInterfaceOrientationPortrait) {
+        // ls_targetRect 是原来的数值.
         self.contentView.frame = [self.delegate ls_targetRect];
         [self.contentView layoutIfNeeded];
     }
     self.currentOrientation = newOrientation;
     
     [self.delegate ls_willRotateToOrientation:self.currentOrientation];
+    
     BOOL isFullscreen = size.width > size.height;
     if (self.disableAnimations) {
         [CATransaction begin];
+        // Sets whether actions triggered as a result of property changes made within this transaction group are suppressed.
+        // 这样, 任何关键帧属性变化, 都不引起数据变化.
         [CATransaction setDisableActions:YES];
     }
     [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> _Nonnull context) {

@@ -1,27 +1,3 @@
-
-//  ZFOrentationObserver.m
-//  ZFPlayer
-//
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import "ZFOrientationObserver.h"
 #import "ZFLandscapeWindow.h"
 #import "ZFPortraitViewController.h"
@@ -78,7 +54,7 @@
 
 @interface ZFOrientationObserver () <ZFLandscapeViewControllerDelegate>
 
-@property (nonatomic, weak) ZFPlayerView *view;
+@property (nonatomic, weak) ZFPlayerView *view; // 真正的, 播放器视图.
 
 @property (nonatomic, assign, getter=isFullScreen) BOOL fullScreen;
 
@@ -112,7 +88,6 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
-        _duration = 0.30;
         _fullScreenMode = ZFFullScreenModeLandscape;
         _supportInterfaceOrientation = ZFInterfaceOrientationMaskAllButUpsideDown;
         _allowOrientationRotation = YES;
@@ -166,8 +141,9 @@
         return;
     }
     UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation)[UIDevice currentDevice].orientation;
-
+    
     // Determine that if the current direction is the same as the direction you want to rotate, do nothing
+    // 实际上, 私有方法也会触发这里的监听, 这里做一个拦截. 否则就递归了.
     if (currentOrientation == _currentOrientation) return;
     _currentOrientation = currentOrientation;
     if (_currentOrientation == UIInterfaceOrientationPortraitUpsideDown) return;
@@ -213,19 +189,25 @@
     [self rotateToOrientation:orientation animated:animated completion:nil];
 }
 
-- (void)rotateToOrientation:(UIInterfaceOrientation)orientation animated:(BOOL)animated completion:(void(^ __nullable)(void))completion {
+// 该函数入口, 可能是用户点击了全屏播放按钮, 强制进行了 Landscape 的 Deivce 变化.
+// 也可能是设备的重力方向变化.
+- (void)rotateToOrientation:(UIInterfaceOrientation)targetOrientation
+                   animated:(BOOL)animated
+                 completion:(void(^)(void))completion {
     if (self.fullScreenMode == ZFFullScreenModePortrait) return;
-    _currentOrientation = orientation;
+    _currentOrientation = targetOrientation;
     self.forceRotaion = YES;
-    if (UIInterfaceOrientationIsLandscape(orientation)) {
+    
+    if (UIInterfaceOrientationIsLandscape(targetOrientation)) {
         if (!self.fullScreen) {
+            
+            // 这里, 是进行 landscapeViewController 的配置工作.
             UIView *containerView = nil;
             if (self.rotateType == ZFRotateTypeCell) {
                 containerView = [self.cell viewWithTag:self.playerViewTag];
             } else {
                 containerView = self.containerView;
             }
-            CGRect targetRect = [self.view convertRect:self.view.frame toView:containerView.window];
             
             if (!self.window) {
                 self.window = [ZFLandscapeWindow new];
@@ -237,7 +219,6 @@
                 }
             }
             
-            self.window.landscapeViewController.targetRect = targetRect;
             self.window.landscapeViewController.contentView = self.view;
             self.window.landscapeViewController.containerView = self.containerView;
             self.fullScreen = YES;
@@ -246,6 +227,7 @@
     } else {
         self.fullScreen = NO;
     }
+    
     self.window.landscapeViewController.disableAnimations = !animated;
     @zf_weakify(self)
     self.window.landscapeViewController.rotatingCompleted = ^{
@@ -255,7 +237,7 @@
     };
     
     [self interfaceOrientation:UIInterfaceOrientationUnknown];
-    [self interfaceOrientation:orientation];
+    [self interfaceOrientation:targetOrientation];
 }
 
 - (void)enterPortraitFullScreen:(BOOL)fullScreen animated:(BOOL)animated {
@@ -330,12 +312,13 @@
     return NO;
 }
 
-- (void)_rotationToLandscapeOrientation:(UIInterfaceOrientation)orientation {
+- (void)showLandscapeWindow:(UIInterfaceOrientation)orientation {
     if (UIInterfaceOrientationIsLandscape(orientation)) {
         UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
         if (keyWindow != self.window && self.previousKeyWindow != keyWindow) {
             self.previousKeyWindow = UIApplication.sharedApplication.keyWindow;
         }
+        // 当, 横屏的时候, 让自己的全屏 Window 进行展示.
         if (!self.window.isKeyWindow) {
             self.window.hidden = NO;
             [self.window makeKeyAndVisible];
@@ -343,7 +326,7 @@
     }
 }
 
-- (void)_rotationToPortraitOrientation:(UIInterfaceOrientation)orientation {
+- (void)showPortraitWindow:(UIInterfaceOrientation)orientation {
     if (orientation == UIInterfaceOrientationPortrait && !self.window.hidden) {
         UIView *containerView = nil;
         if (self.rotateType == ZFRotateTypeCell) {
@@ -351,13 +334,14 @@
         } else {
             containerView = self.containerView;
         }
-        [self performSelector:@selector(_contentViewAdd:) onThread:NSThread.mainThread withObject:containerView waitUntilDone:NO modes:@[NSDefaultRunLoopMode]];
-        [self performSelector:@selector(_makeKeyAndVisible:) onThread:NSThread.mainThread withObject:self.snapshot waitUntilDone:NO modes:@[NSDefaultRunLoopMode]];
+        [self performSelector:@selector(relocateContentViewToContainerView:) onThread:NSThread.mainThread withObject:containerView waitUntilDone:NO modes:@[NSDefaultRunLoopMode]];
+        [self performSelector:@selector(showOriginKeyWindow:) onThread:NSThread.mainThread withObject:self.snapshot waitUntilDone:NO modes:@[NSDefaultRunLoopMode]];
     }
 }
 
-/// 截屏
-- (void)snapshotPlayerView {
+// 在全屏动画之前, 截屏当前的 PlayerView, 然后存放到当前的 ContainerView 上.
+// 在 LandscapeVC 上, 仅仅做 contentView 的 superView 的切换.
+- (void)cachePlayerViewSnapshot {
     UIView *containerView = nil;
     if (self.rotateType == ZFRotateTypeCell) {
         containerView = [self.cell viewWithTag:self.playerViewTag];
@@ -369,22 +353,25 @@
     [containerView addSubview:self.snapshot];
 }
 
-- (void)_contentViewAdd:(UIView *)containerView {
+- (void)relocateContentViewToContainerView:(UIView *)containerView {
     [containerView addSubview:self.view];
     self.view.frame = containerView.bounds;
     [self.view layoutIfNeeded];
 }
 
-- (void)_makeKeyAndVisible:(UIView *)snapshot {
+- (void)showOriginKeyWindow:(UIView *)snapshot {
     if (snapshot) { [snapshot removeFromSuperview]; }
     UIWindow *previousKeyWindow = self.previousKeyWindow ?: UIApplication.sharedApplication.windows.firstObject;
     [previousKeyWindow makeKeyAndVisible];
     self.previousKeyWindow = nil;
-    self.window.hidden = YES;
+    self.window.hidden = YES; // 将自己的 Window 进行隐藏.
 }
 
 #pragma mark - ZFLandscapeViewControllerDelegate
 
+// 这里是不太好的一个试下. 在一个 Get 方法里面, 产生了副作用.
+// LandscapeVC, 检测到了 DeviceChange, 然后调用 shouldAutoRate. 到达这里.
+// 然后进行了 Window 的切换.
 - (BOOL)ls_shouldAutorotate {
     if (self.fullScreenMode == ZFFullScreenModePortrait) {
         return NO;
@@ -396,7 +383,7 @@
     }
     
     if (self.forceRotaion) {
-        [self _rotationToLandscapeOrientation:currentOrientation];
+        [self showLandscapeWindow:currentOrientation];
         return YES;
     }
     
@@ -404,7 +391,7 @@
         return NO;
     }
     
-    [self _rotationToLandscapeOrientation:currentOrientation];
+    [self showLandscapeWindow:currentOrientation];
     return YES;
 }
 
@@ -413,14 +400,15 @@
     if (self.orientationWillChange) self.orientationWillChange(self, self.isFullScreen);
     // 截屏
     if (!self.isFullScreen) {
-        [self snapshotPlayerView];
+        [self cachePlayerViewSnapshot];
     }
 }
 
+// 当, 旋转完毕之后, 会执行该方法, 把 contentView 从 Landscape 上摘出来, 到原来的 container 上
 - (void)ls_didRotateFromOrientation:(UIInterfaceOrientation)orientation {
     if (self.orientationDidChanged) self.orientationDidChanged(self, self.isFullScreen);
     if (!self.isFullScreen) {
-        [self _rotationToPortraitOrientation:UIInterfaceOrientationPortrait];
+        [self showPortraitWindow:UIInterfaceOrientationPortrait];
     }
 }
 
