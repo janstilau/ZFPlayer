@@ -73,6 +73,7 @@
 
 /* Begin PBXFileReference section */
 		0040F8EE0D7B4F3A7F8AB74C /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		06852BCF27CFC40A00EC73FD /* URLVideo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = URLVideo.h; sourceTree = "<group>"; };
 		19B3D184FECD92F512BC2B45 /* Pods-ZFPlayer_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZFPlayer_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-ZFPlayer_Example/Pods-ZFPlayer_Example.release.xcconfig"; sourceTree = "<group>"; };
 		33764A6C5440702A1511A383 /* Pods_ZFPlayer_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ZFPlayer_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		359925C5989084AB9F6D488A /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
@@ -366,6 +367,7 @@
 				D20935FA20B658AE0002C956 /* ZFTableData.h */,
 				D20935F520B658AE0002C956 /* ZFTableData.m */,
 				D20935F620B658AE0002C956 /* data.json */,
+				06852BCF27CFC40A00EC73FD /* URLVideo.h */,
 			);
 			path = Model;
 			sourceTree = "<group>";

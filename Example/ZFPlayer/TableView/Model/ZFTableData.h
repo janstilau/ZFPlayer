@@ -10,6 +10,7 @@
 #import <UIKit/UIKit.h> 
 
 @interface ZFTableData : NSObject
+
 @property (nonatomic, copy) NSString *nick_name;
 @property (nonatomic, copy) NSString *head;
 @property (nonatomic, assign) NSInteger agree_num;
@@ -23,5 +24,7 @@
 @property (nonatomic, assign) CGFloat video_height;
 @property (nonatomic, copy) NSString *thumbnail_url;
 @property (nonatomic, copy) NSString *video_url;
+
+
 
 @end
