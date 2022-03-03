@@ -1,27 +1,3 @@
-//
-//  ZFPlayerGestureControl.m
-//  ZFPlayer
-//
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import "ZFPlayerGestureControl.h"
 
 @interface ZFPlayerGestureControl ()<UIGestureRecognizerDelegate>
@@ -38,6 +14,11 @@
 @end
 
 @implementation ZFPlayerGestureControl
+
+- (instancetype)init {
+    self = [super init];
+    return self;
+}
 
 - (void)addGestureToView:(UIView *)view {
     self.targetView = view;
@@ -145,7 +126,7 @@
         _singleTap.delegate = self;
         _singleTap.delaysTouchesBegan = YES;
         _singleTap.delaysTouchesEnded = YES;
-        _singleTap.numberOfTouchesRequired = 1;  
+        _singleTap.numberOfTouchesRequired = 1;
         _singleTap.numberOfTapsRequired = 1;
     }
     return _singleTap;
@@ -157,7 +138,7 @@
         _doubleTap.delegate = self;
         _doubleTap.delaysTouchesBegan = YES;
         _singleTap.delaysTouchesEnded = YES;
-        _doubleTap.numberOfTouchesRequired = 1; 
+        _doubleTap.numberOfTouchesRequired = 1;
         _doubleTap.numberOfTapsRequired = 2;
     }
     return _doubleTap;

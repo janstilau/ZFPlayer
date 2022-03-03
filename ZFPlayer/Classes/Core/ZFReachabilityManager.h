@@ -1,27 +1,3 @@
-//
-//  ZFReachabilityManager.h
-//  ZFPlayer
-//
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import <Foundation/Foundation.h>
 #if !TARGET_OS_WATCH
 #import <SystemConfiguration/SystemConfiguration.h>
@@ -39,11 +15,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  `ZFReachabilityManager` monitors the reachability of domains, and addresses for both WWAN and WiFi network interfaces.
-
+ 
  Reachability can be used to determine background information about why a network operation failed, or to trigger a network operation retrying when a connection is established. It should not be used to prevent a user from initiating a network request, as it's possible that an initial request may be required to establish reachability.
-
+ 
  See Apple's Reachability Sample Code ( https://developer.apple.com/library/ios/samplecode/reachability/ )
-
+ 
  @warning Instances of `AFNetworkReachabilityManager` must be started with `-startMonitoring` before reachability status can be determined.
  */
 @interface ZFReachabilityManager : NSObject
@@ -86,27 +62,27 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Creates and returns a network reachability manager for the specified domain.
-
+ 
  @param domain The domain used to evaluate network reachability.
-
+ 
  @return An initialized network reachability manager, actively monitoring the specified domain.
  */
 + (instancetype)managerForDomain:(NSString *)domain;
 
 /**
  Creates and returns a network reachability manager for the socket address.
-
+ 
  @param address The socket address (`sockaddr_in6`) used to evaluate network reachability.
-
+ 
  @return An initialized network reachability manager, actively monitoring the specified socket address.
  */
 + (instancetype)managerForAddress:(const void *)address;
 
 /**
  Initializes an instance of a network reachability manager from the specified reachability object.
-
+ 
  @param reachability The reachability object to monitor.
-
+ 
  @return An initialized network reachability manager, actively monitoring the specified reachability.
  */
 - (instancetype)initWithReachability:(SCNetworkReachabilityRef)reachability NS_DESIGNATED_INITIALIZER;
@@ -140,7 +116,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Sets a callback to be executed when the network availability of the `baseURL` host changes.
-
+ 
  @param block A block object to be executed when the network availability of the `baseURL` host changes.. This block has no return value and takes a single argument which represents the various reachability states from the device to the `baseURL`.
  */
 - (void)setReachabilityStatusChangeBlock:(nullable void (^)(ZFReachabilityStatus status))block;
