@@ -19,30 +19,45 @@
     _allowOrentitaionRotation = allowOrentitaionRotation;
 }
 
-/// 在这里写支持的旋转方向，为了防止横屏方向，应用启动时候界面变为横屏模式
+/*
+ 
+ */
+
+/*
+ This method returns the total set of interface orientations supported by the app.
+ When determining whether to rotate a particular view controller, the orientations returned by this method are intersected with the orientations supported by the root view controller or topmost presented view controller.
+ The app and view controller must agree before the rotation is allowed.
+ If you do not implement this method, the app uses the values in the UIInterfaceOrientation key of the app’s Info.plist as the default interface orientations.
+ */
 - (UIInterfaceOrientationMask)application:(UIApplication *)application supportedInterfaceOrientationsForWindow:(UIWindow *)window {
-    // 可以这么写
+    NSLog(@"从 Delegate 获取 支持的 InterfaceOrientation");
+    
+    return UIInterfaceOrientationMaskAllButUpsideDown;
+    
     if (self.allowOrentitaionRotation) {
         return UIInterfaceOrientationMaskAllButUpsideDown;
     }
     return UIInterfaceOrientationMaskPortrait;
 }
 
-- (void)applicationDidEnterBackground:(UIApplication *)application {
-    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-    // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
-}
+/*
+ UIViewController: supportedInterfaceOrientations
+ 
+ This property returns a bit mask that specifies which orientations the view controller supports. For more information, see UIInterfaceOrientationMask.
+ When the device orientation changes, the system calls this method on the root view controller or the topmost modal view controller that fills the window. If the view controller supports the new orientation, the system rotates the window and the view controller.
+ The system only calls this method if the view controller's shouldAutorotate method returns true.
+ 
+ Override this method to declare which orientations the view controller supports. The default value is all for the iPad idiom and allButUpsideDown for the iPhone idiom. The value you return must not be 0.
+ To determine whether to rotate, the system compares the view controller's supported orientations with the app's supported orientations — as determined by the Info.plist file or the app delegate's application(_:supportedInterfaceOrientationsFor:) method — and the device's supported orientations.
+ Note
+ All iPadOS devices support the portraitUpsideDown orientation. It’s best practice to enable it for the iPad idiom. iOS devices without a Home button, such as iPhone 12, don’t support this orientation. You should disable it entirely for the iPhone idiom.
+ */
 
-- (void)applicationWillEnterForeground:(UIApplication *)application {
-    // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
-}
-
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-    // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-}
-
-- (void)applicationWillTerminate:(UIApplication *)application {
-    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-}
+/*
+ UIViewController: preferredInterfaceOrientationForPresentation
+ 
+ The system calls this method when presenting the view controller full screen. When your view controller supports two or more orientations but the content appears best in one of those orientations, override this method and return the preferred orientation.
+ If your view controller implements this method, your view controller’s view is shown in the preferred orientation (although it can later be rotated to another supported rotation). If you do not implement this method, the system presents the view controller using the current orientation of the status bar.
+ */
 
 @end

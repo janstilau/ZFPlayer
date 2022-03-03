@@ -60,11 +60,15 @@
 
 // Whether automatic screen rotation is supported.
 - (BOOL)shouldAutorotate {
+    NSLog(@"从 TabVC 获取 shouldAutoRotate %@", [self viewControllerRotation]);
+    return YES;
+    
     return [[self viewControllerRotation] shouldAutorotate];
 }
 
 // Which screen directions are supported.
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
+    NSLog(@"从 TabVC 获取 supportedInterface %@", [self viewControllerRotation]);
     return [[self viewControllerRotation] supportedInterfaceOrientations];
 }
 
@@ -96,11 +100,13 @@
 
 // Whether automatic screen rotation is supported
 - (BOOL)shouldAutorotate {
+    NSLog(@"从 NavVC 获取 shouldAutoRotate %@", self.topViewController);
     return [self.topViewController shouldAutorotate];
 }
 
 // Which screen directions are supported
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
+    NSLog(@"从 NavVC 获取 supportedInterfaceOrientations %@", self.topViewController);
     return [self.topViewController supportedInterfaceOrientations];
 }
 

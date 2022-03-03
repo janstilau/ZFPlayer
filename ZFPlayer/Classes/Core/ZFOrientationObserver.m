@@ -121,7 +121,18 @@
 - (void)addDeviceOrientationObserver {
     if (self.allowOrientationRotation) {
         self.activeDeviceObserver = YES;
+        /*
+         If the value of this property is YES, the shared UIDevice object posts a UIDeviceOrientationDidChangeNotification notification when the device changes orientation.
+         If the value is NO, it generates no orientation notifications.
+         Device orientation notifications can only be generated between calls to the beginGeneratingDeviceOrientationNotifications and endGeneratingDeviceOrientationNotifications methods.
+         */
         if (![UIDevice currentDevice].generatesDeviceOrientationNotifications) {
+            /*
+             You must call this method before attempting to get orientation data from the receiver.
+             This method enables the device’s accelerometer hardware and begins the delivery of acceleration events to the receiver.
+             The receiver subsequently uses these events to post UIDeviceOrientationDidChangeNotification notifications when the device orientation changes and to update the orientation property.
+             You may nest calls to this method safely, but you should always match each call with a corresponding call to the endGeneratingDeviceOrientationNotifications method.
+             */
             [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
         }
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleDeviceOrientationChange) name:UIDeviceOrientationDidChangeNotification object:nil];
@@ -146,7 +157,32 @@
     if (!UIDeviceOrientationIsValidInterfaceOrientation([UIDevice currentDevice].orientation)) {
         return;
     }
+    
+    /*
+     The value of the property is a constant that indicates the current orientation of the device. This value represents the physical orientation of the device and may be different from the current orientation of your application’s user interface. See UIDeviceOrientation for descriptions of the possible values.
+     The value of this property always returns 0 unless orientation notifications have been enabled by calling beginGeneratingDeviceOrientationNotifications.
+     */
+    /*
+     UIDeviceOrientationUnknown,
+     UIDeviceOrientationPortrait,            // Device oriented vertically, home button on the bottom
+     UIDeviceOrientationPortraitUpsideDown,  // Device oriented vertically, home button on the top
+     UIDeviceOrientationLandscapeLeft,       // Device oriented horizontally, home button on the right
+     UIDeviceOrientationLandscapeRight,      // Device oriented horizontally, home button on the left
+     UIDeviceOrientationFaceUp,              // Device oriented flat, face up
+     UIDeviceOrientationFaceDown             // Device oriented flat, face down
+     */
+    /*
+     typedef NS_ENUM(NSInteger, UIInterfaceOrientation) {
+         UIInterfaceOrientationUnknown            = UIDeviceOrientationUnknown,
+         UIInterfaceOrientationPortrait           = UIDeviceOrientationPortrait,
+         UIInterfaceOrientationPortraitUpsideDown = UIDeviceOrientationPortraitUpsideDown,
+         UIInterfaceOrientationLandscapeLeft      = UIDeviceOrientationLandscapeRight,
+         UIInterfaceOrientationLandscapeRight     = UIDeviceOrientationLandscapeLeft
+     } API_UNAVAILABLE(tvos);
+     */
     UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation)[UIDevice currentDevice].orientation;
+    NSLog(@"Current UIDevice Orientation: %@", @([UIDevice currentDevice].orientation));
+    
     // Determine that if the current direction is the same as the direction you want to rotate, do nothing
     // 实际上, 私有方法也会触发这里的监听, 这里做一个拦截. 否则就递归了.
     if (currentOrientation == _currentOrientation) return;

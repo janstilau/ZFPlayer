@@ -16,7 +16,7 @@ static NSString *kIdentifier = @"kIdentifier";
 @interface ZFViewController () <UITableViewDelegate,UITableViewDataSource>
 
 @property (nonatomic, strong) UITableView *tableView;
-@property (nonatomic, strong) NSMutableArray <ZFTableSectionModel *>*datas;
+@property (nonatomic, strong) NSMutableArray<ZFTableSectionModel*> *datas;
 
 @end
 
@@ -24,6 +24,7 @@ static NSString *kIdentifier = @"kIdentifier";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
     self.navigationItem.title = @"ZFPlayer";
     [self.view addSubview:self.tableView];
     self.datas = @[].mutableCopy;

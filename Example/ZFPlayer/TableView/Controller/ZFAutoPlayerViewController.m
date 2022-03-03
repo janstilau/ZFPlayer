@@ -30,6 +30,16 @@ static NSString *kIdentifier = @"kIdentifier";
 
 @implementation ZFAutoPlayerViewController
 
+- (instancetype)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    NSLog(@"ZFAutoPlayerViewController initWithNibName");
+    return self;
+}
+
+- (void)dealloc {
+    NSLog(@"ZFAutoPlayerViewController dealloc");
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor whiteColor];
