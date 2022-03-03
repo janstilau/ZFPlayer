@@ -195,6 +195,7 @@
                    animated:(BOOL)animated
                  completion:(void(^)(void))completion {
     if (self.fullScreenMode == ZFFullScreenModePortrait) return;
+    // _currentOrientation 并不是实际的设备的朝向, 而是自己记录的朝向.
     _currentOrientation = targetOrientation;
     self.forceRotaion = YES;
     

@@ -4,6 +4,7 @@
 
 @dynamic rootViewController;
 
+// 没有背景色.
 - (void)setBackgroundColor:(nullable UIColor *)backgroundColor {}
 
 - (instancetype)initWithFrame:(CGRect)frame {
