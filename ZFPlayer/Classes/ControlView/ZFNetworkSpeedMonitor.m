@@ -1,27 +1,3 @@
-//
-//  ZFNetworkSpeedMonitor.m
-//  ZFPlayer
-//
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import "ZFNetworkSpeedMonitor.h"
 #if __has_include(<ZFPlayer/ZFPlayerLogManager.h>)
 #import <ZFPlayer/ZFPlayerLogManager.h>
@@ -96,6 +72,7 @@ NSString *const ZFNetworkSpeedNotificationKey         = @"ZFNetworkSpeedNotifica
     }
 }
 
+// 一顿底层函数操作, 最后就是将这些数据, 变为一个字符串. 
 - (void)checkNetworkSpeed {
     struct ifaddrs *ifa_list = 0, *ifa;
     if (getifaddrs(&ifa_list) == -1) return;
@@ -147,7 +124,6 @@ NSString *const ZFNetworkSpeedNotificationKey         = @"ZFNetworkSpeedNotifica
         userInfo[ZFNetworkSpeedNotificationKey] = _downloadNetworkSpeed;
         
         [[NSNotificationCenter defaultCenter] postNotificationName:ZFDownloadNetworkSpeedNotificationKey object:nil userInfo:userInfo];
-        ZFPlayerLog(@"downloadNetworkSpeed : %@",_downloadNetworkSpeed);
     }
     
     _iBytes = iBytes;
@@ -158,7 +134,6 @@ NSString *const ZFNetworkSpeedNotificationKey         = @"ZFNetworkSpeedNotifica
         userInfo[ZFNetworkSpeedNotificationKey] = _uploadNetworkSpeed;
         
         [[NSNotificationCenter defaultCenter] postNotificationName:ZFUploadNetworkSpeedNotificationKey object:nil userInfo:userInfo];
-        ZFPlayerLog(@"uploadNetworkSpeed :%@",_uploadNetworkSpeed);
     }
     
     _oBytes = oBytes;

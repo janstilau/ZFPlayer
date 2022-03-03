@@ -32,16 +32,14 @@
     return self;
 }
 
-- (void)awakeFromNib {
-    [super awakeFromNib];
-    [self initialize];
-}
-
 - (void)initialize {
     self.userInteractionEnabled = NO;
     [self addSubview:self.loadingView];
     [self addSubview:self.speedTextLabel];
     [self.speedMonitor startNetworkSpeedMonitor];
+    // speedMonitor 其实应该提供一个回调. 现在来看, 一个 LoadingView 对应一个网络监控.
+    // 如果是多 Tab 情况, 整个 App 内会有多个 ZFSpeedLoadingView. 整个时候, 就会多次发出 Noti.
+    // 从目前来看, 没有 LoadingView 没有暴露停止监听的接口.
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(networkSpeedChanged:) name:ZFDownloadNetworkSpeedNotificationKey object:nil];
 }
 
@@ -83,8 +81,8 @@
 }
 
 - (void)stopAnimating {
-    [self.loadingView stopAnimating];
-    self.hidden = YES;
+//    [self.loadingView stopAnimating];
+//    self.hidden = YES;
 }
 
 - (UILabel *)speedTextLabel {

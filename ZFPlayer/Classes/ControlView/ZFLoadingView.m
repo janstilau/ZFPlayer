@@ -1,27 +1,3 @@
-//
-//  ZFLoadingView.m
-//  ZFPlayer
-//
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import "ZFLoadingView.h"
 
 @interface ZFLoadingView ()
@@ -52,17 +28,12 @@
     return self;
 }
 
-- (void)awakeFromNib {
-    [super awakeFromNib];
-    [self initialize];
-}
-
 - (void)initialize {
-    [self.layer addSublayer:self.shapeLayer];
     self.duration = 1;
     self.lineWidth = 1;
     self.lineColor = [UIColor whiteColor];
     self.userInteractionEnabled = NO;
+    [self.layer addSublayer:self.shapeLayer];
 }
 
 - (void)layoutSubviews {
@@ -82,7 +53,11 @@
 - (void)startAnimating {
     if (self.animating) return;
     self.animating = YES;
-    if (self.animType == ZFLoadingTypeFadeOut) [self fadeOutShow];
+    if (self.animType == ZFLoadingTypeFadeOut) {
+        // 增加线条出现又离开的效果. 
+        [self fadeOutShow];
+    }
+    
     CABasicAnimation *rotationAnim = [CABasicAnimation animationWithKeyPath:@"transform.rotation.z"];
     rotationAnim.toValue = [NSNumber numberWithFloat:2 * M_PI];
     rotationAnim.duration = self.duration;
@@ -103,6 +78,17 @@
     }
 }
 
+/*
+ 前半段动画:
+ 起始画笔, 从开始位置, 向四分之一处移动.
+ 终止画笔, 从开始位置, 画满.
+ 给人的感觉就是一直在画.
+ 
+ 后半段动画:
+ 起始画笔, 从四分之一处, 慢慢到最后位置.
+ 终止画笔, 不动.
+ 给人的感觉, 就是慢慢线在慢慢消失.
+ */
 - (void)fadeOutShow {
     CABasicAnimation *headAnimation = [CABasicAnimation animation];
     headAnimation.keyPath = @"strokeStart";
