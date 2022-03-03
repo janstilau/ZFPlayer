@@ -159,7 +159,7 @@
 - (void)_scrollViewDidStopScroll {
     self.zf_scrollDirection = ZFPlayerScrollDirectionNone;
     @zf_weakify(self)
-    [self zf_filterShouldPlayCellWhileScrolled:^(NSIndexPath * _Nonnull indexPath) {
+    [self zf_filterShouldPlayCellWhileScrollStop:^(NSIndexPath * _Nonnull indexPath) {
         @zf_strongify(self)
         if (self.zf_scrollViewDidEndScrollingCallback) {
             self.zf_scrollViewDidEndScrollingCallback(indexPath);
@@ -383,7 +383,7 @@
     }
 }
 
-/**
+/*
  Find the playing cell while the scrollDirection is vertical.
  */
 - (void)_findCorrectCellWhenScrollViewDirectionVertical:(void (^ __nullable)(NSIndexPath *indexPath))handler {
@@ -408,7 +408,8 @@
         visiableCells = [tableView visibleCells];
         // First visible cell indexPath
         indexPath = tableView.indexPathsForVisibleRows.firstObject;
-        if ((self.contentOffset.y <= 0 || isLast) && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
+        if ((self.contentOffset.y <= 0 || isLast) &&
+            (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
             UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
             UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
             if (playerView && !playerView.hidden && playerView.alpha > 0.01) {
@@ -649,7 +650,8 @@
     }
 }
 
-- (void)zf_filterShouldPlayCellWhileScrolled:(void (^ __nullable)(NSIndexPath *indexPath))handler {
+// 找一下, 应该播放的 Cell, 然后传递给外界.
+- (void)zf_filterShouldPlayCellWhileScrollStop:(void (^ __nullable)(NSIndexPath *indexPath))handler {
     if (!self.zf_shouldAutoPlay) return;
     @zf_weakify(self)
     [self zf_filterShouldPlayCellWhileScrolling:^(NSIndexPath *indexPath) {
@@ -657,7 +659,7 @@
         /// 如果当前控制器已经消失，直接return
         if (self.zf_viewControllerDisappear) return;
         if ([ZFReachabilityManager sharedManager].isReachableViaWWAN && !self.zf_WWANAutoPlay) {
-            /// 移动网络
+            //
             self.zf_shouldPlayIndexPath = indexPath;
             return;
         }
@@ -665,6 +667,10 @@
         self.zf_playingIndexPath = indexPath;
     }];
 }
+
+
+
+
 
 #pragma mark - getter
 

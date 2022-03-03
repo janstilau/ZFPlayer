@@ -209,7 +209,7 @@ Scroll to indexPath with position.
 @property (nonatomic, assign) ZFPlayerContainerType zf_containerType;
 
 /// Filter the cell that should be played when the scroll is stopped (to play when the scroll is stopped).
-- (void)zf_filterShouldPlayCellWhileScrolled:(void (^ __nullable)(NSIndexPath *indexPath))handler;
+- (void)zf_filterShouldPlayCellWhileScrollStop:(void (^ __nullable)(NSIndexPath *indexPath))handler;
 
 /// Filter the cell that should be played while scrolling (you can use this to filter the highlighted cell).
 - (void)zf_filterShouldPlayCellWhileScrolling:(void (^ __nullable)(NSIndexPath *indexPath))handler;

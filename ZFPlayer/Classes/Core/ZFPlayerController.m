@@ -1112,6 +1112,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
                 }
             } else {  /// add to window
                 if (!self.isSmallFloatViewShow) {
+                    // 小窗的播放, 直接写到了 Player 的内部. 
                     [self addPlayerViewToSmallFloatView];
                 }
             }
@@ -1300,7 +1301,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
 #pragma mark - Public method
 
 - (void)zf_filterShouldPlayCellWhileScrolled:(void (^ __nullable)(NSIndexPath *indexPath))handler {
-    [self.scrollView zf_filterShouldPlayCellWhileScrolled:handler];
+    [self.scrollView zf_filterShouldPlayCellWhileScrollStop:handler];
 }
 
 - (void)zf_filterShouldPlayCellWhileScrolling:(void (^ __nullable)(NSIndexPath *indexPath))handler {

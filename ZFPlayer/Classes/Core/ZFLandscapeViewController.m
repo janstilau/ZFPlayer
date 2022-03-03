@@ -33,6 +33,8 @@
 /*
  [self interfaceOrientation:targetOrientation]; 会直接调用到这里. 
  */
+
+// 实际上, 整个动画, 都是在 Landscape 上进行的. 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
     
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
@@ -59,6 +61,7 @@
     
     [self.delegate ls_willRotateToOrientation:self.currentOrientation];
     
+    // 根据目标尺寸, 来判断是要进入全屏, 还是退出全屏.
     BOOL isFullscreen = size.width > size.height;
     if (self.disableAnimations) {
         [CATransaction begin];
@@ -67,6 +70,7 @@
         [CATransaction setDisableActions:YES];
     }
     [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> _Nonnull context) {
+        
         if (isFullscreen) {
             self.contentView.frame = CGRectMake(0, 0, size.width, size.height);
         } else {

@@ -173,11 +173,11 @@
      */
     /*
      typedef NS_ENUM(NSInteger, UIInterfaceOrientation) {
-         UIInterfaceOrientationUnknown            = UIDeviceOrientationUnknown,
-         UIInterfaceOrientationPortrait           = UIDeviceOrientationPortrait,
-         UIInterfaceOrientationPortraitUpsideDown = UIDeviceOrientationPortraitUpsideDown,
-         UIInterfaceOrientationLandscapeLeft      = UIDeviceOrientationLandscapeRight,
-         UIInterfaceOrientationLandscapeRight     = UIDeviceOrientationLandscapeLeft
+     UIInterfaceOrientationUnknown            = UIDeviceOrientationUnknown,
+     UIInterfaceOrientationPortrait           = UIDeviceOrientationPortrait,
+     UIInterfaceOrientationPortraitUpsideDown = UIDeviceOrientationPortraitUpsideDown,
+     UIInterfaceOrientationLandscapeLeft      = UIDeviceOrientationLandscapeRight,
+     UIInterfaceOrientationLandscapeRight     = UIDeviceOrientationLandscapeLeft
      } API_UNAVAILABLE(tvos);
      */
     UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation)[UIDevice currentDevice].orientation;
@@ -305,6 +305,7 @@
 - (void)enterPortraitFullScreen:(BOOL)fullScreen animated:(BOOL)animated completion:(void(^ __nullable)(void))completion {
     self.fullScreen = fullScreen;
     if (fullScreen) {
+        
         self.portraitViewController.contentView = self.playerView;
         self.portraitViewController.containerView = self.containerView;
         self.portraitViewController.duration = self.duration;
@@ -314,6 +315,7 @@
             self.portraitViewController.presentationSize = CGSizeMake(ZFPlayerScreenWidth, ZFPlayerScreenHeight);
         }
         self.portraitViewController.fullScreenAnimation = animated;
+        
         [[UIWindow zf_currentViewController] presentViewController:self.portraitViewController animated:animated completion:^{
             if (completion) completion();
         }];
@@ -463,6 +465,7 @@
     } else {
         containerView = self.containerView;
     }
+    // 获取, 在原来的竖屏下的 ContaienrView 的位置信息.
     CGRect targetRect = [containerView convertRect:containerView.bounds toView:containerView.window];
     return targetRect;
 }

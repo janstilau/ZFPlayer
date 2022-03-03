@@ -186,6 +186,7 @@
     self.transition.duration = duration;
 }
 
+// 这里还是 Mode 计算, 最终就是居中显示 Video.
 - (CGRect)contentFullScreenRect {
     CGFloat videoWidth = self.presentationSize.width;
     CGFloat videoHeight = self.presentationSize.height;
@@ -207,8 +208,8 @@
     
     videoWidth = fullScreenScaleSize.width;
     videoHeight = fullScreenScaleSize.height;
-    CGRect rect = CGRectMake((ZFPlayerScreenWidth - videoWidth) / 2.0, (ZFPlayerScreenHeight - videoHeight) / 2.0, videoWidth, videoHeight);
-    return rect;
+    CGRect result = CGRectMake((ZFPlayerScreenWidth - videoWidth) / 2.0, (ZFPlayerScreenHeight - videoHeight) / 2.0, videoWidth, videoHeight);
+    return result;
 }
 
 @end
