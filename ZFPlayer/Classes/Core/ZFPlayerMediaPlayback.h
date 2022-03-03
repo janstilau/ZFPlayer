@@ -9,6 +9,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol ZFPlayerMediaPlayback <NSObject>
 
 @required
+
 /// The view must inherited `ZFPlayerView`,this view deals with some gesture conflicts.
 @property (nonatomic) ZFPlayerView *view;
 

@@ -1,27 +1,3 @@
-//
-//  UIScrollView+ZFPlayer.m
-//  ZFPlayer
-//
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import "UIScrollView+ZFPlayer.h"
 #import <objc/runtime.h>
 #import "ZFReachabilityManager.h"
@@ -42,6 +18,7 @@
 
 #pragma mark - public method
 
+// 就是在 TableView, CollectionView 里面, 取值
 - (UIView *)zf_getCellForIndexPath:(NSIndexPath *)indexPath {
     if ([self _isTableView]) {
         UITableView *tableView = (UITableView *)self;
@@ -69,13 +46,13 @@
 }
 
 /**
-Scroll to indexPath with position.
+ Scroll to indexPath with position.
  
-@param indexPath scroll the  indexPath.
-@param scrollPosition  scrollView scroll position.
-@param animated animate.
-@param completionHandler  Scroll completion callback.
-*/
+ @param indexPath scroll the  indexPath.
+ @param scrollPosition  scrollView scroll position.
+ @param animated animate.
+ @param completionHandler  Scroll completion callback.
+ */
 - (void)zf_scrollToRowAtIndexPath:(NSIndexPath *)indexPath
                  atScrollPosition:(ZFPlayerScrollViewScrollPosition)scrollPosition
                          animated:(BOOL)animated
@@ -137,6 +114,7 @@ Scroll to indexPath with position.
             [collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:collectionScrollPosition animated:animated];
         }
     }
+    // 这里的回调, 简单粗暴地时候了延时调用.
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (completionHandler) completionHandler();
     });
@@ -183,8 +161,9 @@ Scroll to indexPath with position.
     @zf_weakify(self)
     [self zf_filterShouldPlayCellWhileScrolled:^(NSIndexPath * _Nonnull indexPath) {
         @zf_strongify(self)
-        if (self.zf_scrollViewDidStopScrollCallback) self.zf_scrollViewDidStopScrollCallback(indexPath);
-        if (self.zf_scrollViewDidEndScrollingCallback) self.zf_scrollViewDidEndScrollingCallback(indexPath);
+        if (self.zf_scrollViewDidEndScrollingCallback) {
+            self.zf_scrollViewDidEndScrollingCallback(indexPath);
+        }
     }];
 }
 
@@ -197,7 +176,7 @@ Scroll to indexPath with position.
 }
 
 /**
-  The percentage of scrolling processed in vertical scrolling.
+ The percentage of scrolling processed in vertical scrolling.
  */
 - (void)_scrollViewScrollingDirectionVertical {
     CGFloat offsetY = self.contentOffset.y;
@@ -320,7 +299,7 @@ Scroll to indexPath with position.
             if (self.zf_playerDidDisappearInScrollView) self.zf_playerDidDisappearInScrollView(self.zf_playingIndexPath);
             return;
         }
-       playerView = [cell viewWithTag:self.zf_containerViewTag];
+        playerView = [cell viewWithTag:self.zf_containerViewTag];
     } else if (self.zf_containerType == ZFPlayerContainerTypeView) {
         if (!self.zf_containerView) return;
         playerView = self.zf_containerView;
@@ -410,7 +389,7 @@ Scroll to indexPath with position.
 - (void)_findCorrectCellWhenScrollViewDirectionVertical:(void (^ __nullable)(NSIndexPath *indexPath))handler {
     if (!self.zf_shouldAutoPlay) return;
     if (self.zf_containerType == ZFPlayerContainerTypeView) return;
-
+    
     if (!self.zf_stopWhileNotVisible) {
         /// If you have a cell that is playing, stop the traversal.
         if (self.zf_playingIndexPath) {
@@ -845,8 +824,9 @@ Scroll to indexPath with position.
 }
 
 - (void)setZf_shouldPlayIndexPath:(NSIndexPath *)zf_shouldPlayIndexPath {
-    if (self.zf_playerShouldPlayInScrollView) self.zf_playerShouldPlayInScrollView(zf_shouldPlayIndexPath);
-    if (self.zf_shouldPlayIndexPathCallback) self.zf_shouldPlayIndexPathCallback(zf_shouldPlayIndexPath);
+    if (self.zf_playerShouldPlayInScrollView){
+        self.zf_playerShouldPlayInScrollView(zf_shouldPlayIndexPath);
+    }
     objc_setAssociatedObject(self, @selector(zf_shouldPlayIndexPath), zf_shouldPlayIndexPath, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
@@ -871,45 +851,3 @@ Scroll to indexPath with position.
 }
 
 @end
-
-
-@implementation UIScrollView (ZFPlayerDeprecated)
-
-#pragma mark - getter
-
-- (void (^)(NSIndexPath * _Nonnull))zf_scrollViewDidStopScrollCallback {
-    return objc_getAssociatedObject(self, _cmd);
-}
-
-- (void (^)(NSIndexPath * _Nonnull))zf_shouldPlayIndexPathCallback {
-    return objc_getAssociatedObject(self, _cmd);
-}
-
-#pragma mark - setter
-
-- (void)setZf_scrollViewDidStopScrollCallback:(void (^)(NSIndexPath * _Nonnull))zf_scrollViewDidStopScrollCallback {
-    objc_setAssociatedObject(self, @selector(zf_scrollViewDidStopScrollCallback), zf_scrollViewDidStopScrollCallback, OBJC_ASSOCIATION_COPY_NONATOMIC);
-}
-
-- (void)setZf_shouldPlayIndexPathCallback:(void (^)(NSIndexPath * _Nonnull))zf_shouldPlayIndexPathCallback {
-    objc_setAssociatedObject(self, @selector(zf_shouldPlayIndexPathCallback), zf_shouldPlayIndexPathCallback, OBJC_ASSOCIATION_COPY_NONATOMIC);
-}
-
-#pragma mark - method
-
-- (void)zf_scrollToRowAtIndexPath:(NSIndexPath *)indexPath completionHandler:(void (^ __nullable)(void))completionHandler {
-    [self zf_scrollToRowAtIndexPath:indexPath animated:YES completionHandler:completionHandler];
-}
-
-- (void)zf_scrollToRowAtIndexPath:(NSIndexPath *)indexPath animated:(BOOL)animated completionHandler:(void (^ __nullable)(void))completionHandler {
-    [self zf_scrollToRowAtIndexPath:indexPath animateWithDuration:animated ? 0.4 : 0.0 completionHandler:completionHandler];
-}
-
-/// Scroll to indexPath with animations duration.
-- (void)zf_scrollToRowAtIndexPath:(NSIndexPath *)indexPath animateWithDuration:(NSTimeInterval)duration completionHandler:(void (^ __nullable)(void))completionHandler {
-    [self zf_scrollToRowAtIndexPath:indexPath atScrollPosition:ZFPlayerScrollViewScrollPositionTop animateDuration:duration completionHandler:completionHandler];
-}
-
-@end
-
-#pragma clang diagnostic pop

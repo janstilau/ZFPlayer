@@ -20,6 +20,7 @@
     return self;
 }
 
+// 将, 所有的手势处理, 都封装到了自己的内部.
 - (void)addGestureToView:(UIView *)view {
     self.targetView = view;
     self.targetView.multipleTouchEnabled = YES;
@@ -43,6 +44,7 @@
         CGPoint translation = [(UIPanGestureRecognizer *)gestureRecognizer translationInView:self.targetView];
         CGFloat x = fabs(translation.x);
         CGFloat y = fabs(translation.y);
+        // 根据 Xy 的关系, 来判断是否应该识别手势 .
         if (x < y && self.disablePanMovingDirection & ZFPlayerDisablePanMovingDirectionVertical) { /// up and down moving direction.
             return NO;
         } else if (x > y && self.disablePanMovingDirection & ZFPlayerDisablePanMovingDirectionHorizontal) { /// left and right moving direction.
@@ -58,6 +60,7 @@
     else if (gestureRecognizer == self.doubleTap) type = ZFPlayerGestureTypeDoubleTap;
     else if (gestureRecognizer == self.panGR) type = ZFPlayerGestureTypePan;
     else if (gestureRecognizer == self.pinchGR) type = ZFPlayerGestureTypePinch;
+    
     CGPoint locationPoint = [touch locationInView:touch.view];
     if (locationPoint.x > _targetView.bounds.size.width / 2) {
         self.panLocation = ZFPanLocationRight;
@@ -165,6 +168,9 @@
     return _pinchGR;
 }
 
+/*
+ 将, 各种对于手势的操作, 使用 Block 的方式, 传递到了外界.
+ */
 - (void)handleSingleTap:(UITapGestureRecognizer *)tap {
     if (self.singleTapped) self.singleTapped(self);
 }

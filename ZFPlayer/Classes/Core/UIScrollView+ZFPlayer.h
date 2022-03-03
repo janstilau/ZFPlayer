@@ -216,29 +216,4 @@ Scroll to indexPath with position.
 
 @end
 
-@interface UIScrollView (ZFPlayerDeprecated)
-
-/// The block invoked When the player did stop scroll.
-@property (nonatomic, copy, nullable) void(^zf_scrollViewDidStopScrollCallback)(NSIndexPath *indexPath) __attribute__((deprecated("use `ZFPlayerController.zf_scrollViewDidEndScrollingCallback` instead.")));
-
-/// The block invoked When the player should play.
-@property (nonatomic, copy, nullable) void(^zf_shouldPlayIndexPathCallback)(NSIndexPath *indexPath) __attribute__((deprecated("use `ZFPlayerController.zf_playerShouldPlayInScrollView` instead.")));
-
-
-/// Scroll to indexPath position  `ZFPlayerScrollViewScrollPositionTop` with animations.
-- (void)zf_scrollToRowAtIndexPath:(NSIndexPath *)indexPath
-                completionHandler:(void (^ __nullable)(void))completionHandler __attribute__((deprecated("use `zf_scrollToRowAtIndexPath:atScrollPosition:animated:completionHandler:` instead.")));
-
-/// Scroll to indexPath position  `ZFPlayerScrollViewScrollPositionTop` with animations.
-- (void)zf_scrollToRowAtIndexPath:(NSIndexPath *)indexPath
-                         animated:(BOOL)animated
-                completionHandler:(void (^ __nullable)(void))completionHandler __attribute__((deprecated("use `zf_scrollToRowAtIndexPath:atScrollPosition:animated:completionHandler:` instead.")));
-
-/// Scroll to indexPath position  `ZFPlayerScrollViewScrollPositionTop` with animations.
-- (void)zf_scrollToRowAtIndexPath:(NSIndexPath *)indexPath
-              animateWithDuration:(NSTimeInterval)duration
-                completionHandler:(void (^ __nullable)(void))completionHandler __attribute__((deprecated("use `zf_scrollToRowAtIndexPath:atScrollPosition:animateDuration:completionHandler:` instead.")));
-
-@end
-
 NS_ASSUME_NONNULL_END

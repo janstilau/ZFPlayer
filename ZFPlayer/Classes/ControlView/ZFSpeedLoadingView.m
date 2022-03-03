@@ -81,8 +81,8 @@
 }
 
 - (void)stopAnimating {
-//    [self.loadingView stopAnimating];
-//    self.hidden = YES;
+    [self.loadingView stopAnimating];
+    self.hidden = YES;
 }
 
 - (UILabel *)speedTextLabel {

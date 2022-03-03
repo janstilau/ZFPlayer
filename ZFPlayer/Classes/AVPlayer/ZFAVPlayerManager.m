@@ -1,27 +1,3 @@
-//
-//  ZFAVPlayerManager.m
-//  ZFPlayer
-//
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import "ZFAVPlayerManager.h"
 #import <UIKit/UIKit.h>
 #if __has_include(<ZFPlayer/ZFPlayer.h>)
@@ -89,6 +65,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     id _itemEndObserver;
     ZFKVOController *_playerItemKVO;
 }
+
 @property (nonatomic, strong) AVPlayerLayer *playerLayer;
 @property (nonatomic, assign) BOOL isBuffering;
 @property (nonatomic, assign) BOOL isReadyToPlay;
@@ -98,6 +75,8 @@ static NSString *const kPresentationSize         = @"presentationSize";
 
 @implementation ZFAVPlayerManager
 
+// 因为, 前面没有写出各个属性出来, 仅仅是声明实现了这个协议.
+// 所以在类的内部, 实际上没有成员变量的, 要定义出来.
 @synthesize view                           = _view;
 @synthesize currentTime                    = _currentTime;
 @synthesize totalTime                      = _totalTime;
@@ -144,7 +123,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     } else {
         [self.player play];
         self.player.rate = self.rate;
-        self->_isPlaying = YES;
+        _isPlaying = YES;
         self.playState = ZFPlayerPlayStatePlaying;
     }
 }
@@ -153,7 +132,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     if (!_assetURL) return;
     
     _isPreparedToPlay = YES;
-    [self initializePlayer];
+    [self initializePlayer]; // 真正的初始化和各种配置 .
     if (self.shouldAutoPlay) {
         [self play];
     }
@@ -278,6 +257,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     
     [self enableAudioTracks:YES inPlayerItem:_playerItem];
     
+    // 显示和 AVPlayer 进行了挂钩.
     ZFPlayerPresentView *presentView = [[ZFPlayerPresentView alloc] init];
     presentView.player = _player;
     self.view.playerView = presentView;
@@ -307,7 +287,6 @@ static NSString *const kPresentationSize         = @"presentationSize";
  *  缓冲较差时候回调这里
  */
 - (void)bufferingSomeSecond {
-    // playbackBufferEmpty会反复进入，因此在bufferingOneSecond延时播放执行完之前再调用bufferingSomeSecond都忽略
     if (self.isBuffering || self.playState == ZFPlayerPlayStatePlayStopped) return;
     /// 没有网络
     if ([ZFReachabilityManager sharedManager].networkReachabilityStatus == ZFReachabilityStatusNotReachable) return;
@@ -372,15 +351,20 @@ static NSString *const kPresentationSize         = @"presentationSize";
     }];
 }
 
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+// 大量使用 KVO, 本质原因是, 视频播放, 是一个异步控制的过程 .
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([keyPath isEqualToString:kStatus]) {
             if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
                 if (!self.isReadyToPlay) {
                     self.isReadyToPlay = YES;
                     self.loadState = ZFPlayerLoadStatePlaythroughOK;
+                    // 首次触发, 给外界一次信息.
                     if (self.playerReadyToPlay) self.playerReadyToPlay(self, self.assetURL);
                 }
+                // 当, 视频还不能播放的时候, 可能用户会修改 seektime 的值. 那么当视频可用了, 应该进行 seek
                 if (self.seekTime) {
                     if (self.shouldAutoPlay) [self pause];
                     @zf_weakify(self)
@@ -395,6 +379,9 @@ static NSString *const kPresentationSize         = @"presentationSize";
                     if (self.shouldAutoPlay && self.isPlaying) [self play];
                 }
                 self.player.muted = self.muted;
+                /*
+                 The array contains NSValue objects containing a CMTimeRange value indicating the times ranges to which the player item can seek. The time ranges returned may be discontinuous.
+                 */
                 NSArray *loadedRanges = self.playerItem.seekableTimeRanges;
                 if (loadedRanges.count > 0) {
                     if (self.playerPlayTimeChanged) self.playerPlayTimeChanged(self, self.currentTime, self.totalTime);
@@ -476,6 +463,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     if (self.playerLoadStateChanged) self.playerLoadStateChanged(self, loadState);
 }
 
+// 每次 URL 的改变, 都会进行 AVPlayer 层的重置操作. 
 - (void)setAssetURL:(NSURL *)assetURL {
     if (self.player) [self stop];
     _assetURL = assetURL;

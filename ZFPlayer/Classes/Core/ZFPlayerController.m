@@ -6,6 +6,7 @@
 #import "ZFReachabilityManager.h"
 #import "ZFPlayerConst.h"
 
+// 这里存放了, 所有的播放视频的播放进度.
 static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
 
 @interface ZFPlayerController ()
@@ -37,6 +38,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
         dispatch_once(&onceToken, ^{
             _zfPlayRecords = @{}.mutableCopy;
         });
+        
         @zf_weakify(self)
         [[ZFReachabilityManager sharedManager] startMonitoring];
         [[ZFReachabilityManager sharedManager] setReachabilityStatusChangeBlock:^(ZFReachabilityStatus status) {
@@ -50,7 +52,8 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     return self;
 }
 
-/// Get system volume
+// 使用了系统的 MPVolumeView. MPVolumeView 的修改, 可以直接修改系统的音量.
+// 所以, 对于系统音量的修改, 是使用了比较私有的实现方案 .
 - (void)configureVolume {
     MPVolumeView *volumeView = [[MPVolumeView alloc] init];
     self.volumeViewSlider = nil;
@@ -107,7 +110,8 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     return player;
 }
 
-- (void)playerManagerCallbcak {
+- (void)setupPlayProgressCallbacks {
+    // Player 的各种状态改变, 主要的是进行 ControlView 的状态改变.
     @zf_weakify(self)
     self.currentPlayerManager.playerPrepareToPlay = ^(id<ZFPlayerMediaPlayback>  _Nonnull asset, NSURL * _Nonnull assetURL) {
         @zf_strongify(self)
@@ -213,8 +217,11 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     };
 }
 
+// 如果是 containerView 这种形式, 将视频 View 添加到 ContainerView 上, 添加 ControlView. 然后全部填满.
 - (void)layoutPlayerSubViews {
-    if (self.containerView && self.currentPlayerManager.view && self.currentPlayerManager.isPreparedToPlay) {
+    if (self.containerView &&
+        self.currentPlayerManager.view &&
+        self.currentPlayerManager.isPreparedToPlay) {
         UIView *superview = nil;
         if (self.isFullScreen) {
             superview = self.orientationObserver.fullScreenContainerView;
@@ -287,16 +294,18 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
 
 - (void)setCurrentPlayerManager:(id<ZFPlayerMediaPlayback>)currentPlayerManager {
     if (!currentPlayerManager) return;
+    // 先做原来的清理工作.
     if (_currentPlayerManager.isPreparedToPlay) {
         [_currentPlayerManager stop];
         [_currentPlayerManager.view removeFromSuperview];
+        // 将, 各种功能封装到类里面的好处. 在这里体现出来了.
         [self removeDeviceOrientationObserver];
         [self.gestureControl removeGestureToView:self.currentPlayerManager.view];
     }
     _currentPlayerManager = currentPlayerManager;
     self.gestureControl.disableTypes = self.disableGestureTypes;
     [self.gestureControl addGestureToView:currentPlayerManager.view];
-    [self playerManagerCallbcak];
+    [self setupPlayProgressCallbacks];
     self.controlView.player = self;
     [self layoutPlayerSubViews];
     if (currentPlayerManager.isPreparedToPlay) {
@@ -417,7 +426,8 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     self.currentPlayerManager = playerManager;
 }
 
-//// Add video to the cell
+// 将, 播放器的视图, 重新安装到 Cell 上.
+// 这是从详情页返回的时候, 做的事情 .
 - (void)addPlayerViewToCell {
     self.isSmallFloatViewShow = NO;
     self.smallFloatView.hidden = YES;
@@ -432,7 +442,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     }
 }
 
-//// Add video to the container view
+// 和 ToCell 没有太大的区别, 不过是 ContainerView 的获取, 从 Cell 变为了自己存储的 ContainerView.
 - (void)addPlayerViewToContainerView:(UIView *)containerView {
     self.isSmallFloatViewShow = NO;
     self.smallFloatView.hidden = YES;
@@ -446,6 +456,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     }
 }
 
+// 将, 播放器视图, 安装到了小窗上.
 - (void)addPlayerViewToSmallFloatView {
     self.isSmallFloatViewShow = YES;
     self.smallFloatView.hidden = NO;
@@ -476,7 +487,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
 }
 
 #pragma mark - getter
-
+// 莫名其妙, 这些都使用 关联对象实现.
 - (BOOL)resumePlayRecord {
     return [objc_getAssociatedObject(self, _cmd) boolValue];
 }
@@ -626,6 +637,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     objc_setAssociatedObject(self, @selector(lastVolumeValue), @(lastVolumeValue), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
+// 直接进行的是, Screen 的修改.
 - (void)setBrightness:(float)brightness {
     brightness = MIN(MAX(0, brightness), 1);
     objc_setAssociatedObject(self, @selector(brightness), @(brightness), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -716,6 +728,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
 
 @implementation ZFPlayerController (ZFPlayerOrientationRotation)
 
+// 各种全局展示的操作, 都交给了 orientationObserver 进行处理.
 - (void)addDeviceOrientationObserver {
     if (self.allowOrentitaionRotation) {
         [self.orientationObserver addDeviceOrientationObserver];
@@ -895,6 +908,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
 
 #pragma mark - getter
 
+// 各种手势, 主要是转交给 ControlView 进行控制.
 - (ZFPlayerGestureControl *)gestureControl {
     ZFPlayerGestureControl *gestureControl = objc_getAssociatedObject(self, _cmd);
     if (!gestureControl) {
@@ -999,6 +1013,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     });
 }
 
+// 在消亡的时候, 进行了小窗的去除.
 - (void)zf_dealloc {
     [self.smallFloatView removeFromSuperview];
     self.smallFloatView = nil;
@@ -1010,6 +1025,8 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
 - (void)setScrollView:(UIScrollView *)scrollView {
     objc_setAssociatedObject(self, @selector(scrollView), scrollView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     self.scrollView.zf_WWANAutoPlay = self.isWWANAutoPlay;
+    
+    
     @zf_weakify(self)
     scrollView.zf_playerWillAppearInScrollView = ^(NSIndexPath * _Nonnull indexPath) {
         @zf_strongify(self)
@@ -1132,7 +1149,6 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     if (playingIndexPath) {
         self.isSmallFloatViewShow = NO;
         if (self.smallFloatView) self.smallFloatView.hidden = YES;
-        
         UIView *cell = [self.scrollView zf_getCellForIndexPath:playingIndexPath];
         self.containerView = [cell viewWithTag:self.containerViewTag];
         [self.orientationObserver updateRotateView:self.currentPlayerManager.view rotateViewAtCell:cell playerViewTag:self.containerViewTag];
@@ -1355,87 +1371,3 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
 }
 
 @end
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
-@implementation ZFPlayerController (ZFPlayerDeprecated)
-
-- (void)updateScrollViewPlayerToCell {
-    if (self.currentPlayerManager.view && self.playingIndexPath && self.containerViewTag) {
-        UIView *cell = [self.scrollView zf_getCellForIndexPath:self.playingIndexPath];
-        self.containerView = [cell viewWithTag:self.containerViewTag];
-        [self.orientationObserver updateRotateView:self.currentPlayerManager.view rotateViewAtCell:cell playerViewTag:self.containerViewTag];
-        [self layoutPlayerSubViews];
-    }
-}
-
-- (void)updateNoramlPlayerWithContainerView:(UIView *)containerView {
-    if (self.currentPlayerManager.view && self.containerView) {
-        self.containerView = containerView;
-        [self.orientationObserver updateRotateView:self.currentPlayerManager.view containerView:self.containerView];
-        [self layoutPlayerSubViews];
-    }
-}
-
-- (void)playTheIndexPath:(NSIndexPath *)indexPath scrollToTop:(BOOL)scrollToTop completionHandler:(void (^ _Nullable)(void))completionHandler {
-    NSURL *assetURL;
-    if (self.sectionAssetURLs.count) {
-        assetURL = self.sectionAssetURLs[indexPath.section][indexPath.row];
-    } else if (self.assetURLs.count) {
-        assetURL = self.assetURLs[indexPath.row];
-        self.currentPlayIndex = indexPath.row;
-    }
-    if (scrollToTop) {
-        @zf_weakify(self)
-        [self.scrollView zf_scrollToRowAtIndexPath:indexPath completionHandler:^{
-            @zf_strongify(self)
-            if (completionHandler) completionHandler();
-            self.playingIndexPath = indexPath;
-            self.assetURL = assetURL;
-        }];
-    } else {
-        if (completionHandler) completionHandler();
-        self.playingIndexPath = indexPath;
-        self.assetURL = assetURL;
-    }
-}
-
-- (void)playTheIndexPath:(NSIndexPath *)indexPath scrollToTop:(BOOL)scrollToTop {
-    if ([indexPath compare:self.playingIndexPath] == NSOrderedSame) return;
-    if (scrollToTop) {
-        @zf_weakify(self)
-        [self.scrollView zf_scrollToRowAtIndexPath:indexPath completionHandler:^{
-            @zf_strongify(self)
-            [self playTheIndexPath:indexPath];
-        }];
-    } else {
-        [self playTheIndexPath:indexPath];
-    }
-}
-
-- (void)playTheIndexPath:(NSIndexPath *)indexPath assetURL:(NSURL *)assetURL scrollToTop:(BOOL)scrollToTop {
-    self.playingIndexPath = indexPath;
-    self.assetURL = assetURL;
-    if (scrollToTop) {
-        [self.scrollView zf_scrollToRowAtIndexPath:indexPath completionHandler:nil];
-    }
-}
-
-- (void)enterLandscapeFullScreen:(UIInterfaceOrientation)orientation animated:(BOOL)animated completion:(void (^ _Nullable)(void))completion {
-    self.orientationObserver.fullScreenMode = ZFFullScreenModeLandscape;
-    [self.orientationObserver rotateToOrientation:orientation animated:animated completion:completion];
-}
-
-- (void)enterLandscapeFullScreen:(UIInterfaceOrientation)orientation animated:(BOOL)animated {
-    [self enterLandscapeFullScreen:orientation animated:animated completion:nil];
-}
-
-/// Add to the keyWindow
-- (void)addPlayerViewToKeyWindow {
-    [self addPlayerViewToSmallFloatView];
-}
-
-@end
-
-#pragma clang diagnostic pop

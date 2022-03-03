@@ -30,6 +30,9 @@
 #import "ZFPlayerMediaPlayback.h"
 #endif
 
+/*
+ 这个类, 封装的是对于 AVPlayer 的管理. 所以, 实际上, 是真正的视频播放控制类. 
+ */
 @interface ZFAVPlayerManager : NSObject <ZFPlayerMediaPlayback>
 
 @property (nonatomic, strong, readonly) AVURLAsset *asset;
