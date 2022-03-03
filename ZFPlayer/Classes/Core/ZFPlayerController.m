@@ -1,27 +1,3 @@
-//
-//  ZFPlayerController.m
-//  ZFPlayer
-//
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import "ZFPlayerController.h"
 #import <objc/runtime.h>
 #import <MediaPlayer/MediaPlayer.h>
@@ -258,30 +234,37 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
 
 #pragma mark - getter
 
+/*
+ 生成 ZFPlayerNotification 的过程. 在这里, 对 ZFPlayerNotification 的各种 Block 回调进行了注册.
+ ZFPlayerNotification 也暴露给了外界, 使得外界可以进行自定义.
+ 在生成的时候, 进行了各种和播放相关的 Block 的注册.
+ */
 - (ZFPlayerNotification *)notification {
     if (!_notification) {
         _notification = [[ZFPlayerNotification alloc] init];
         @zf_weakify(self)
         _notification.willResignActive = ^(ZFPlayerNotification * _Nonnull registrar) {
             @zf_strongify(self)
+            // 当前的 VC 不显示, 不做处理.
             if (self.isViewControllerDisappear) return;
+            // 当前正在播放, 进行停止操作, pauseByEvent 里面会有后续处理.
             if (self.pauseWhenAppResignActive && self.currentPlayerManager.isPlaying) {
                 self.pauseByEvent = YES;
             }
+            // lockedScreen 保证了, 不会进行 Device 的转动监听了.
+            // 可以看到在这里, 是一个 Player 一个 orientationObserver. 及时的停止是非常有必要的. 因为 orientationObserver 里面, 全屏播放会影响到全局.
             self.orientationObserver.lockedScreen = YES;
             [[UIApplication sharedApplication].keyWindow endEditing:YES];
-            if (!self.pauseWhenAppResignActive) {
-                [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
-                [[AVAudioSession sharedInstance] setActive:YES error:nil];
-            }
         };
         _notification.didBecomeActive = ^(ZFPlayerNotification * _Nonnull registrar) {
             @zf_strongify(self)
             if (self.isViewControllerDisappear) return;
+            // App 重新活跃了, 重新进行播放. 重新进行监听.
             if (self.isPauseByEvent) self.pauseByEvent = NO;
             self.orientationObserver.lockedScreen = NO;
         };
         _notification.oldDeviceUnavailable = ^(ZFPlayerNotification * _Nonnull registrar) {
+            // 耳机被拔出了. 停止播放, 这是一个现在非常常见的操作.
             @zf_strongify(self)
             if (self.currentPlayerManager.isPlaying) {
                 [self.currentPlayerManager play];
@@ -649,6 +632,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     [UIScreen mainScreen].brightness = brightness;
 }
 
+// 这个属性的修改, 保证了 Player 的自动播放功能.
 - (void)setPauseByEvent:(BOOL)pauseByEvent {
     objc_setAssociatedObject(self, @selector(isPauseByEvent), @(pauseByEvent), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     if (pauseByEvent) {
@@ -702,8 +686,15 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     objc_setAssociatedObject(self, @selector(currentPlayIndex), @(currentPlayIndex), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
+/*
+ ViewControllerDisappear 会在 VC 的 ViewWillAppear, ViewDidAppear 里面进行赋值操作.
+ 在内部, 会使用 ViewControllerDisappear 这个值, 在各种事件回调处理里面, 进行拦截.
+ 在 set 的时候, 也进行其他的同步处理.
+ */
 - (void)setViewControllerDisappear:(BOOL)viewControllerDisappear {
+    // 为什么要在这里, 进行 Associate 的技巧.
     objc_setAssociatedObject(self, @selector(isViewControllerDisappear), @(viewControllerDisappear), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    
     if (self.scrollView) self.scrollView.zf_viewControllerDisappear = viewControllerDisappear;
     if (!self.currentPlayerManager.isPreparedToPlay) return;
     if (viewControllerDisappear) {

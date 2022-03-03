@@ -117,7 +117,7 @@
 }
 
 - (void)stop {
-    [self removeMovieNotificationObservers];
+    [self removeIJKMNotificationObservers];
     [self.player shutdown];
     [self.player.view removeFromSuperview];
     self.player = nil;
@@ -162,7 +162,7 @@
 - (void)initializePlayer {
     // IJKFFMoviePlayerController 初始化后，必须手动进行释放，否则会依然存在内存中对资源进行播放。
     if (self.player) {
-        [self removeMovieNotificationObservers];
+        [self removeIJKMNotificationObservers];
         [self.player shutdown];
         [self.player.view removeFromSuperview];
         self.player = nil;
@@ -205,7 +205,7 @@
                                                object:self.player];
 }
 
-- (void)removeMovieNotificationObservers {
+- (void)removeIJKMNotificationObservers {
     [[NSNotificationCenter defaultCenter] removeObserver:self
                                                     name:IJKMPMoviePlayerLoadStateDidChangeNotification
                                                   object:_player];

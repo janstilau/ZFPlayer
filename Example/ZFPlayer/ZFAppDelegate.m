@@ -32,8 +32,6 @@
 - (UIInterfaceOrientationMask)application:(UIApplication *)application supportedInterfaceOrientationsForWindow:(UIWindow *)window {
     NSLog(@"从 Delegate 获取 支持的 InterfaceOrientation");
     
-    return UIInterfaceOrientationMaskAllButUpsideDown;
-    
     if (self.allowOrentitaionRotation) {
         return UIInterfaceOrientationMaskAllButUpsideDown;
     }

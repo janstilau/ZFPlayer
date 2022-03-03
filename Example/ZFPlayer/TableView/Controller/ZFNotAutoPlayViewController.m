@@ -43,6 +43,7 @@ static NSString *kIdentifier = @"kIdentifier";
     self.player = [ZFPlayerController playerWithScrollView:self.tableView playerManager:playerManager containerViewTag:kPlayerViewTag];
     self.player.controlView = self.controlView;
     self.player.shouldAutoPlay = NO;
+    
     /// 1.0是完全消失的时候
     self.player.playerDisapperaPercent = 1.0;
 

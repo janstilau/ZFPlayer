@@ -47,10 +47,13 @@ static NSString *const kPlaybackBufferEmpty      = @"playbackBufferEmpty";
 static NSString *const kPlaybackLikelyToKeepUp   = @"playbackLikelyToKeepUp";
 static NSString *const kPresentationSize         = @"presentationSize";
 
+/*
+ 不要直接使用 AVPlayerLayer, 使用给一个 UIView 类, 来包装 AVPlayerLayer.
+ 然后这个类, 就可以使用 autolayout 了
+ */
 @interface ZFPlayerPresentView : UIView
 
 @property (nonatomic, strong) AVPlayer *player;
-/// default is AVLayerVideoGravityResizeAspect.
 @property (nonatomic, strong) AVLayerVideoGravity videoGravity;
 
 @end
@@ -89,7 +92,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
 @property (nonatomic, strong) AVPlayerLayer *playerLayer;
 @property (nonatomic, assign) BOOL isBuffering;
 @property (nonatomic, assign) BOOL isReadyToPlay;
-@property (nonatomic, strong) AVAssetImageGenerator *imageGenerator;
+@property (nonatomic, strong) AVAssetImageGenerator *imageGenerator; // 截屏的工具类.
 
 @end
 
@@ -130,17 +133,6 @@ static NSString *const kPresentationSize         = @"presentationSize";
     return self;
 }
 
-- (void)prepareToPlay {
-    if (!_assetURL) return;
-    _isPreparedToPlay = YES;
-    [self initializePlayer];
-    if (self.shouldAutoPlay) {
-        [self play];
-    }
-    self.loadState = ZFPlayerLoadStatePrepare;
-    if (self.playerPrepareToPlay) self.playerPrepareToPlay(self, self.assetURL);
-}
-
 - (void)reloadPlayer {
     self.seekTime = self.currentTime;
     [self prepareToPlay];
@@ -155,6 +147,18 @@ static NSString *const kPresentationSize         = @"presentationSize";
         self->_isPlaying = YES;
         self.playState = ZFPlayerPlayStatePlaying;
     }
+}
+
+- (void)prepareToPlay {
+    if (!_assetURL) return;
+    
+    _isPreparedToPlay = YES;
+    [self initializePlayer];
+    if (self.shouldAutoPlay) {
+        [self play];
+    }
+    self.loadState = ZFPlayerLoadStatePrepare;
+    if (self.playerPrepareToPlay) self.playerPrepareToPlay(self, self.assetURL);
 }
 
 - (void)pause {
@@ -217,7 +221,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     self.imageGenerator.requestedTimeToleranceBefore = kCMTimeZero;
     self.imageGenerator.requestedTimeToleranceAfter = kCMTimeZero;
     cgImage = [self.imageGenerator copyCGImageAtTime:expectedTime actualTime:NULL error:NULL];
-
+    
     if (!cgImage) {
         self.imageGenerator.requestedTimeToleranceBefore = kCMTimePositiveInfinity;
         self.imageGenerator.requestedTimeToleranceAfter = kCMTimePositiveInfinity;
@@ -264,17 +268,20 @@ static NSString *const kPresentationSize         = @"presentationSize";
 }
 
 - (void)initializePlayer {
+    // AVURLAsset, 代表着云端的资源.
     _asset = [AVURLAsset URLAssetWithURL:self.assetURL options:self.requestHeader];
+    // AVPlayerItem 代表着, 云端的资源的这次加载的过程.
     _playerItem = [AVPlayerItem playerItemWithAsset:_asset];
+    // AVPlayer 代表着, 实际的播放器类, 里面会做音视频的解码
     _player = [AVPlayer playerWithPlayerItem:_playerItem];
     _imageGenerator = [AVAssetImageGenerator assetImageGeneratorWithAsset:_asset];
-
+    
     [self enableAudioTracks:YES inPlayerItem:_playerItem];
     
     ZFPlayerPresentView *presentView = [[ZFPlayerPresentView alloc] init];
     presentView.player = _player;
     self.view.playerView = presentView;
-
+    
     self.scalingMode = _scalingMode;
     if (@available(iOS 9.0, *)) {
         _playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
@@ -284,7 +291,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
         /// 关闭AVPlayer默认的缓冲延迟播放策略，提高首屏播放速度
         _player.automaticallyWaitsToMinimizeStalling = NO;
     }
-    [self itemObserving];
+    [self startAssetItemObserve];
 }
 
 /// Playback speed switching method
@@ -321,7 +328,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     });
 }
 
-- (void)itemObserving {
+- (void)startAssetItemObserve {
     [_playerItemKVO safelyRemoveAllObservers];
     _playerItemKVO = [[ZFKVOController alloc] initWithTarget:_playerItem];
     [_playerItemKVO safelyAddObserver:self

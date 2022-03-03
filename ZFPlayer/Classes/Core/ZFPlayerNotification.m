@@ -1,27 +1,3 @@
-//
-//  ZFPlayerNotification.m
-//  ZFPlayer
-//
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import "ZFPlayerNotification.h"
 
 @interface ZFPlayerNotification ()
@@ -33,6 +9,12 @@
 @implementation ZFPlayerNotification
 
 - (void)addNotification {
+    /*
+     The userInfo dictionary of this notification contains the AVAudioSessionRouteChangeReasonKey and AVAudioSessionRouteChangePreviousRouteKey keys, which provide information about the route change.
+     See Responding to Audio Session Route Changes for more information on using this notification.
+     The system posts this notification on a secondary thread.
+     // 子线程 Post, 当耳机发生变化的时候发出.
+     */
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(audioSessionRouteChangeNotification:)
                                                  name:AVAudioSessionRouteChangeNotification
@@ -70,7 +52,9 @@
 
 - (void)audioSessionRouteChangeNotification:(NSNotification*)notification {
     dispatch_async(dispatch_get_main_queue(), ^{
+        // 关联式容器的问题就是, 需要使用各种 key 进行取值, 取值 key, 对象的类型, 都是通过文档来进行确认, 代码没有表意性.
         NSDictionary *interuptionDict = notification.userInfo;
+        
         NSInteger routeChangeReason = [[interuptionDict valueForKey:AVAudioSessionRouteChangeReasonKey] integerValue];
         switch (routeChangeReason) {
             case AVAudioSessionRouteChangeReasonNewDeviceAvailable: {

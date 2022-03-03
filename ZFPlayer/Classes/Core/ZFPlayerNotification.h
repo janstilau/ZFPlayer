@@ -1,27 +1,3 @@
-//
-//  ZFPlayerNotification.h
-//  ZFPlayer
-//
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 
@@ -31,6 +7,11 @@ typedef NS_ENUM(NSUInteger, ZFPlayerBackgroundState) {
     ZFPlayerBackgroundStateForeground,  // Enter the foreground from the background.
     ZFPlayerBackgroundStateBackground,  // From the foreground to the background.
 };
+
+/*
+ 视频播放的时候, 需要监听各种设备的事件, 其中有很多是通过通知的方式监听的.
+ 这是一个工具类, 进行各种通知的注册, 然后暴露接口, 进行回调.
+ */
 
 @interface ZFPlayerNotification : NSObject
 
@@ -50,8 +31,14 @@ typedef NS_ENUM(NSUInteger, ZFPlayerBackgroundState) {
 
 @property (nonatomic, copy, nullable) void(^audioInterruptionCallback)(AVAudioSessionInterruptionType interruptionType);
 
+/*
+ 在开始播放的时候, 进行了通知的开始监听.
+ */
 - (void)addNotification;
 
+/*
+ 在停止 stop 的时候, 进行了通知的结束监听.
+ */
 - (void)removeNotification;
 
 @end
