@@ -54,7 +54,7 @@
 
 @interface ZFOrientationObserver () <ZFLandscapeViewControllerDelegate>
 
-@property (nonatomic, weak) ZFPlayerView *view; // 真正的, 播放器视图.
+@property (nonatomic, weak) ZFPlayerView *playerView; // 真正的, 播放器视图.
 
 @property (nonatomic, assign, getter=isFullScreen) BOOL fullScreen;
 
@@ -62,7 +62,8 @@
 
 @property (nonatomic, assign) NSInteger playerViewTag;
 
-@property (nonatomic, assign) ZFRotateType rotateType;
+// 垃圾命名, 这个应该是 PlayerCotainerType
+@property (nonatomic, assign) ZFRotateType playerContainerType;
 
 @property (nonatomic, strong) UIWindow *previousKeyWindow;
 
@@ -91,7 +92,7 @@
         _fullScreenMode = ZFFullScreenModeLandscape;
         _supportInterfaceOrientation = ZFInterfaceOrientationMaskAllButUpsideDown;
         _allowOrientationRotation = YES;
-        _rotateType = ZFRotateTypeNormal;
+        _playerContainerType = ZFRotateTypeNormal;
         _currentOrientation = UIInterfaceOrientationPortrait;
         _portraitFullScreenMode = ZFPortraitFullScreenModeScaleToFill;
         _disablePortraitGestureTypes = ZFDisablePortraitGestureTypesAll;
@@ -101,14 +102,14 @@
 
 - (void)updateRotateView:(ZFPlayerView *)rotateView
            containerView:(UIView *)containerView {
-    self.rotateType = ZFRotateTypeNormal;
-    self.view = rotateView;
+    self.playerContainerType = ZFRotateTypeNormal;
+    self.playerView = rotateView;
     self.containerView = containerView;
 }
 
 - (void)updateRotateView:(ZFPlayerView *)rotateView rotateViewAtCell:(UIView *)cell playerViewTag:(NSInteger)playerViewTag {
-    self.rotateType = ZFRotateTypeCell;
-    self.view = rotateView;
+    self.playerContainerType = ZFRotateTypeCell;
+    self.playerView = rotateView;
     self.cell = cell;
     self.playerViewTag = playerViewTag;
 }
@@ -127,6 +128,10 @@
     }
 }
 
+/*
+ 调用了全局的方法, 其实不太好.
+ 可能其他地方, 也需要进行监听.
+ */
 - (void)removeDeviceOrientationObserver {
     self.activeDeviceObserver = NO;
     if (![UIDevice currentDevice].generatesDeviceOrientationNotifications) {
@@ -137,14 +142,15 @@
 
 - (void)handleDeviceOrientationChange {
     if (self.fullScreenMode == ZFFullScreenModePortrait || !self.allowOrientationRotation) return;
+    
     if (!UIDeviceOrientationIsValidInterfaceOrientation([UIDevice currentDevice].orientation)) {
         return;
     }
     UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation)[UIDevice currentDevice].orientation;
-    
     // Determine that if the current direction is the same as the direction you want to rotate, do nothing
     // 实际上, 私有方法也会触发这里的监听, 这里做一个拦截. 否则就递归了.
     if (currentOrientation == _currentOrientation) return;
+    
     _currentOrientation = currentOrientation;
     if (_currentOrientation == UIInterfaceOrientationPortraitUpsideDown) return;
     
@@ -201,10 +207,9 @@
     
     if (UIInterfaceOrientationIsLandscape(targetOrientation)) {
         if (!self.fullScreen) {
-            
             // 这里, 是进行 landscapeViewController 的配置工作.
             UIView *containerView = nil;
-            if (self.rotateType == ZFRotateTypeCell) {
+            if (self.playerContainerType == ZFRotateTypeCell) {
                 containerView = [self.cell viewWithTag:self.playerViewTag];
             } else {
                 containerView = self.containerView;
@@ -220,7 +225,7 @@
                 }
             }
             
-            self.window.landscapeViewController.contentView = self.view;
+            self.window.landscapeViewController.contentView = self.playerView;
             self.window.landscapeViewController.containerView = self.containerView;
             self.fullScreen = YES;
         }
@@ -237,18 +242,34 @@
         if (completion) completion();
     };
     
+    // 作者取消了 Normal Orientation 的设计, 现在变为了, 一定会强制进行 DeviceOrientation 的变化.
     [self interfaceOrientation:UIInterfaceOrientationUnknown];
     [self interfaceOrientation:targetOrientation];
+}
+
+- (void)enterFullScreen:(BOOL)fullScreen animated:(BOOL)animated {
+    [self enterFullScreen:fullScreen animated:animated completion:nil];
+}
+
+- (void)enterFullScreen:(BOOL)fullScreen animated:(BOOL)animated completion:(void (^ _Nullable)(void))completion {
+    if (self.fullScreenMode == ZFFullScreenModePortrait) {
+        [self enterPortraitFullScreen:fullScreen animated:animated completion:completion];
+    } else {
+        UIInterfaceOrientation orientation = UIInterfaceOrientationUnknown;
+        orientation = fullScreen? UIInterfaceOrientationLandscapeRight : UIInterfaceOrientationPortrait;
+        [self rotateToOrientation:orientation animated:animated completion:completion];
+    }
 }
 
 - (void)enterPortraitFullScreen:(BOOL)fullScreen animated:(BOOL)animated {
     [self enterPortraitFullScreen:fullScreen animated:animated completion:nil];
 }
 
+// 竖屏的全屏, 也是在另外的一个 VC 上进行的展示, 不是在原有的 VC 上.
 - (void)enterPortraitFullScreen:(BOOL)fullScreen animated:(BOOL)animated completion:(void(^ __nullable)(void))completion {
     self.fullScreen = fullScreen;
     if (fullScreen) {
-        self.portraitViewController.contentView = self.view;
+        self.portraitViewController.contentView = self.playerView;
         self.portraitViewController.containerView = self.containerView;
         self.portraitViewController.duration = self.duration;
         if (self.portraitFullScreenMode == ZFPortraitFullScreenModeScaleAspectFit) {
@@ -265,20 +286,6 @@
         [self.portraitViewController dismissViewControllerAnimated:animated completion:^{
             if (completion) completion();
         }];
-    }
-}
-
-- (void)enterFullScreen:(BOOL)fullScreen animated:(BOOL)animated {
-    [self enterFullScreen:fullScreen animated:animated completion:nil];
-}
-
-- (void)enterFullScreen:(BOOL)fullScreen animated:(BOOL)animated completion:(void (^ _Nullable)(void))completion {
-    if (self.fullScreenMode == ZFFullScreenModePortrait) {
-        [self enterPortraitFullScreen:fullScreen animated:animated completion:completion];
-    } else {
-        UIInterfaceOrientation orientation = UIInterfaceOrientationUnknown;
-        orientation = fullScreen? UIInterfaceOrientationLandscapeRight : UIInterfaceOrientationPortrait;
-        [self rotateToOrientation:orientation animated:animated completion:completion];
     }
 }
 
@@ -327,37 +334,37 @@
     }
 }
 
-- (void)showPortraitWindow:(UIInterfaceOrientation)orientation {
+- (void)showOriginPortraitWindow:(UIInterfaceOrientation)orientation {
     if (orientation == UIInterfaceOrientationPortrait && !self.window.hidden) {
         UIView *containerView = nil;
-        if (self.rotateType == ZFRotateTypeCell) {
+        if (self.playerContainerType == ZFRotateTypeCell) {
             containerView = [self.cell viewWithTag:self.playerViewTag];
         } else {
             containerView = self.containerView;
         }
-        [self performSelector:@selector(relocateContentViewToContainerView:) onThread:NSThread.mainThread withObject:containerView waitUntilDone:NO modes:@[NSDefaultRunLoopMode]];
+        [self performSelector:@selector(relocateContentViewToOriginContainerView:) onThread:NSThread.mainThread withObject:containerView waitUntilDone:NO modes:@[NSDefaultRunLoopMode]];
         [self performSelector:@selector(showOriginKeyWindow:) onThread:NSThread.mainThread withObject:self.snapshot waitUntilDone:NO modes:@[NSDefaultRunLoopMode]];
     }
 }
 
 // 在全屏动画之前, 截屏当前的 PlayerView, 然后存放到当前的 ContainerView 上.
 // 在 LandscapeVC 上, 仅仅做 contentView 的 superView 的切换.
-- (void)cachePlayerViewSnapshot {
+- (void)cachePlayerSnapshotInOriginWindow {
     UIView *containerView = nil;
-    if (self.rotateType == ZFRotateTypeCell) {
+    if (self.playerContainerType == ZFRotateTypeCell) {
         containerView = [self.cell viewWithTag:self.playerViewTag];
     } else {
         containerView = self.containerView;
     }
-    self.snapshot = [self.view.playerView snapshotViewAfterScreenUpdates:NO];
+    self.snapshot = [self.playerView.playerView snapshotViewAfterScreenUpdates:NO];
     self.snapshot.frame = containerView.bounds;
     [containerView addSubview:self.snapshot];
 }
 
-- (void)relocateContentViewToContainerView:(UIView *)containerView {
-    [containerView addSubview:self.view];
-    self.view.frame = containerView.bounds;
-    [self.view layoutIfNeeded];
+- (void)relocateContentViewToOriginContainerView:(UIView *)containerView {
+    [containerView addSubview:self.playerView];
+    self.playerView.frame = containerView.bounds;
+    [self.playerView layoutIfNeeded];
 }
 
 - (void)showOriginKeyWindow:(UIView *)snapshot {
@@ -401,7 +408,7 @@
     if (self.orientationWillChange) self.orientationWillChange(self, self.isFullScreen);
     // 截屏
     if (!self.isFullScreen) {
-        [self cachePlayerViewSnapshot];
+        [self cachePlayerSnapshotInOriginWindow];
     }
 }
 
@@ -409,13 +416,13 @@
 - (void)ls_didRotateFromOrientation:(UIInterfaceOrientation)orientation {
     if (self.orientationDidChanged) self.orientationDidChanged(self, self.isFullScreen);
     if (!self.isFullScreen) {
-        [self showPortraitWindow:UIInterfaceOrientationPortrait];
+        [self showOriginPortraitWindow:UIInterfaceOrientationPortrait];
     }
 }
 
 - (CGRect)ls_targetRect {
     UIView *containerView = nil;
-    if (self.rotateType == ZFRotateTypeCell) {
+    if (self.playerContainerType == ZFRotateTypeCell) {
         containerView = [self.cell viewWithTag:self.playerViewTag];
     } else {
         containerView = self.containerView;
@@ -520,11 +527,11 @@
     }
 }
 
-- (void)setView:(ZFPlayerView *)view {
-    if (view == _view) {
+- (void)setPlayerView:(ZFPlayerView *)view {
+    if (view == _playerView) {
         return;
     }
-    _view = view;
+    _playerView = view;
     if (self.fullScreenMode == ZFFullScreenModeLandscape && self.window) {
         self.window.landscapeViewController.contentView = view;
     } else if (self.fullScreenMode == ZFFullScreenModePortrait) {

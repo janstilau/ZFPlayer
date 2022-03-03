@@ -1,27 +1,3 @@
-//
-//  ZFPortraitViewController.m
-//  ZFPlayer
-//
-// Copyright (c) 2020年 任子丰 ( http://github.com/renzifeng )
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 #import "ZFPortraitViewController.h"
 #import "ZFPersentInteractiveTransition.h"
 #import "ZFPresentTransition.h"
@@ -39,8 +15,16 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
+        /*
+         When the view controller’s modalPresentationStyle property is UIModalPresentationStyle.custom, UIKit uses the object in this property to facilitate transitions and presentations for the view controller. The transitioning delegate object is a custom object that you provide and that conforms to the UIViewControllerTransitioningDelegate protocol. Its job is to vend the animator objects used to animate this view controller’s view onscreen and an optional presentation controller to provide any additional chrome and animations.
+         */
         self.transitioningDelegate = self;
         self.modalPresentationStyle = UIModalPresentationOverFullScreen;
+        /*
+         The default value of this property is false.
+         When you present a view controller by calling the present(_:animated:completion:) method, status bar appearance control is transferred from the presenting to the presented view controller only if the presented controller's modalPresentationStyle value is UIModalPresentationStyle.fullScreen. By setting this property to true, you specify the presented view controller controls status bar appearance, even though presented non-fullscreen.
+         The system ignores this property’s value for a view controller presented fullscreen.
+         */
         self.modalPresentationCapturesStatusBarAppearance = YES;
         _statusBarStyle = UIStatusBarStyleLightContent;
         _statusBarAnimation = UIStatusBarAnimationSlide;
@@ -73,8 +57,7 @@
         }
     }
     self.fullScreen = YES;
-    [self.interactiveTransition updateContentView:self.contentView
-                                    containerView:self.containerView];
+    [self.interactiveTransition updateContentView:self.contentView containerView:self.containerView];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {

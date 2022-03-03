@@ -74,7 +74,7 @@
     if (gestureRecognizer == self.tapGesture) type = ZFDisablePortraitGestureTypesTap;
     else if (gestureRecognizer == self.panGesture) type = ZFDisablePortraitGestureTypesPan;
     else return NO;
-
+    
     switch (type) {
         case ZFDisablePortraitGestureTypesTap: {
             if (self.disablePortraitGestureTypes & ZFDisablePortraitGestureTypesTap) {
@@ -102,7 +102,7 @@
     CGFloat scale = 0;
     CGPoint translation = [gestureRecognizer translationInView:gestureRecognizer.view];
     scale = translation.y / ((gestureRecognizer.view.frame.size.height - 50) / 2);
-
+    
     if (scale > 1.f) {
         scale = 1.f;
     }
