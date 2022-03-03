@@ -1,5 +1,6 @@
 #import "ZFPersentInteractiveTransition.h"
 
+// 没太明白, 这个类有啥用. 
 @interface ZFPersentInteractiveTransition () <UIGestureRecognizerDelegate>
 
 @property (nonatomic, weak) id<UIViewControllerContextTransitioning> transitionContext;

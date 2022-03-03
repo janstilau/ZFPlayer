@@ -458,10 +458,6 @@
 				D70FBC50D87CBEC1C9EE6DBBDC5F2CBA /* ZFPlayer.h */,
 				5271007B3F2496D52A5B20A04EB27DEF /* ZFPlayerConst.h */,
 				F9C9FD35E48C8AFCFCA073A6F53D4B9F /* ZFPlayerMediaControl.h */,
-				27850A9B195D76F1656AF099A5A3CBF0 /* ZFPortraitViewController.h */,
-				FE5BFC7F1A0CFC7CE4D29FA11F2FCB96 /* ZFPortraitViewController.m */,
-				7F3F153653A3EB689FE86FD5A6E5D8B9 /* ZFPresentTransition.h */,
-				21DB041E5B2A007AA7A699293653F8B7 /* ZFPresentTransition.m */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -580,6 +576,10 @@
 				3A4101328C708FF64F7AE1D2B8215DEE /* ZFLandscapeViewController.m */,
 				B1AF6D15F95505FB7BC120C9F9D82C03 /* ZFLandscapeWindow.h */,
 				11F093625A5581376961B81FA3FDD90C /* ZFLandscapeWindow.m */,
+				27850A9B195D76F1656AF099A5A3CBF0 /* ZFPortraitViewController.h */,
+				FE5BFC7F1A0CFC7CE4D29FA11F2FCB96 /* ZFPortraitViewController.m */,
+				7F3F153653A3EB689FE86FD5A6E5D8B9 /* ZFPresentTransition.h */,
+				21DB041E5B2A007AA7A699293653F8B7 /* ZFPresentTransition.m */,
 			);
 			name = Release;
 			sourceTree = "<group>";

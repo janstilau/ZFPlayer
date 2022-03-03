@@ -201,9 +201,12 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     };
     
     self.currentPlayerManager.presentationSizeChanged = ^(id<ZFPlayerMediaPlayback>  _Nonnull asset, CGSize size){
+        // 当, AVItem 获取到尺寸之后, 会到达这.
+        // orientationObserver.fullScreenMode 改变, 会影响到全屏的时候, 弹出方式. 
         @zf_strongify(self)
         self.orientationObserver.presentationSize = size;
         if (self.orientationObserver.fullScreenMode == ZFFullScreenModeAutomatic) {
+            // 在这里, 进行了 orientationObserver.fullScreenMode 的改变. 
             if (size.width > size.height) {
                 self.orientationObserver.fullScreenMode = ZFFullScreenModeLandscape;
             } else {
