@@ -10,7 +10,6 @@
 #import "ZFReachabilityManager.h"
 #endif
 
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored"-Wdeprecated-declarations"
 
@@ -49,6 +48,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     self.avLayer.player = player;
 }
 
+// 直接就是修改, AVPlayerLayer 的显示状态值.
 - (void)setVideoGravity:(AVLayerVideoGravity)videoGravity {
     if (videoGravity == self.videoGravity) return;
     [self avLayer].videoGravity = videoGravity;
@@ -114,12 +114,12 @@ static NSString *const kPresentationSize         = @"presentationSize";
 
 - (void)reloadPlayer {
     self.seekTime = self.currentTime;
-    [self prepareToPlay];
+    [self resetPlayerAndAutoplay];
 }
 
 - (void)play {
     if (!_isPreparedToPlay) {
-        [self prepareToPlay];
+        [self resetPlayerAndAutoplay];
     } else {
         [self.player play];
         self.player.rate = self.rate;
@@ -129,6 +129,10 @@ static NSString *const kPresentationSize         = @"presentationSize";
 }
 
 - (void)prepareToPlay {
+    [self resetPlayerAndAutoplay];
+}
+
+- (void)resetPlayerAndAutoplay {
     if (!_assetURL) return;
     
     _isPreparedToPlay = YES;
@@ -144,10 +148,21 @@ static NSString *const kPresentationSize         = @"presentationSize";
     [self.player pause];
     self->_isPlaying = NO;
     self.playState = ZFPlayerPlayStatePaused;
+    /*
+     Cancels any pending seek requests and invokes the corresponding completion handlers if present.
+     */
     [_playerItem cancelPendingSeeks];
+    /*
+     Cancels all pending requests to asynchronously load property values.
+     Calling this method cancels pending invocations of the asset’s loadValuesAsynchronously(forKeys:completionHandler:) method.
+     Call this method only when you’re done using an asset and you want to cancel any outstanding requests. Deallocating an asset implictly calls this method if loading requests are still pending.
+     */
     [_asset cancelLoading];
 }
 
+/*
+ 停止播放, 停止一切监听. 停止 Loading.
+ */
 - (void)stop {
     [_playerItemKVO safelyRemoveAllObservers];
     self.loadState = ZFPlayerLoadStateUnknown;
@@ -165,11 +180,14 @@ static NSString *const kPresentationSize         = @"presentationSize";
     _player = nil;
     _assetURL = nil;
     _playerItem = nil;
-    _isPreparedToPlay = NO;
     self->_currentTime = 0;
     self->_totalTime = 0;
     self->_bufferTime = 0;
     self.isReadyToPlay = NO;
+    // 非常重要. Play 的时候, 如果该值 _isPreparedToPlay 为 No, 会进行 PreparePlay 进行各种监听动作.
+    // pause 只会进行播放器的停止, 不会去除这些监听 .
+    // stop 则会释放所有这些监听.
+    _isPreparedToPlay = NO;
 }
 
 - (void)replay {
@@ -183,7 +201,12 @@ static NSString *const kPresentationSize         = @"presentationSize";
 }
 
 - (void)seekToTime:(NSTimeInterval)time completionHandler:(void (^ __nullable)(BOOL finished))completionHandler {
+    /*
+     totalTime > 0, 代表着现在是可播放状态, 进行真正的 SeekToTime 的调用.
+     否则, 就是进行值的记录, 在 Player 加载完数据之后, KVO 里面会使用该值进行处理.
+     */
     if (self.totalTime > 0) {
+        // totalTime
         [_player.currentItem cancelPendingSeeks];
         int32_t timeScale = _player.currentItem.asset.duration.timescale;
         CMTime seekTime = CMTimeMakeWithSeconds(time, timeScale);
@@ -193,6 +216,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     }
 }
 
+// 切图, 不看
 - (UIImage *)thumbnailImageAtCurrentTime {
     CMTime expectedTime = self.playerItem.currentTime;
     CGImageRef cgImage = NULL;
@@ -211,6 +235,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     return image;
 }
 
+// 切图, 不看
 - (void)thumbnailImageAtCurrentTime:(void(^)(UIImage *))handler {
     CMTime expectedTime = self.playerItem.currentTime;
     [self.imageGenerator generateCGImagesAsynchronouslyForTimes:@[[NSValue valueWithCMTime:expectedTime]] completionHandler:^(CMTime requestedTime, CGImageRef  _Nullable image, CMTime actualTime, AVAssetImageGeneratorResult result, NSError * _Nullable error) {
@@ -223,8 +248,15 @@ static NSString *const kPresentationSize         = @"presentationSize";
 
 #pragma mark - private method
 
-/// Calculate buffer progress
+/*
+ 从 loadedTimeRanges 中, 找到当前的时间点所在的区域, 然后将 End 值传递出去.
+ 主要的作用, 是 ControlView 里面, 更新 Buffer 的显示.
+ 目前这种 Buffer 的显示逻辑是, 进度条后面进行相应的 Buffer 显示.
+ */
 - (NSTimeInterval)availableDuration {
+    /*
+     The array contains NSValue objects containing a CMTimeRange value indicating the times ranges for which the player item has media data readily available. The time ranges returned may be discontinuous.
+     */
     NSArray *timeRangeArray = _playerItem.loadedTimeRanges;
     CMTime currentTime = [_player currentTime];
     BOOL foundRange = NO;
@@ -246,6 +278,9 @@ static NSString *const kPresentationSize         = @"presentationSize";
     return 0;
 }
 
+/*
+ 进行视频源 Model, Player, 各种监听的搭建.
+ */
 - (void)initializePlayer {
     // AVURLAsset, 代表着云端的资源.
     _asset = [AVURLAsset URLAssetWithURL:self.assetURL options:self.requestHeader];
@@ -272,6 +307,127 @@ static NSString *const kPresentationSize         = @"presentationSize";
         _player.automaticallyWaitsToMinimizeStalling = NO;
     }
     [self startAssetItemObserve];
+}
+
+- (void)startAssetItemObserve {
+    [_playerItemKVO safelyRemoveAllObservers];
+    _playerItemKVO = [[ZFKVOController alloc] initWithTarget:_playerItem];
+    [_playerItemKVO safelyAddObserver:self
+                           forKeyPath:kStatus
+                              options:NSKeyValueObservingOptionNew
+                              context:nil];
+    [_playerItemKVO safelyAddObserver:self
+                           forKeyPath:kPlaybackBufferEmpty
+                              options:NSKeyValueObservingOptionNew
+                              context:nil];
+    [_playerItemKVO safelyAddObserver:self
+                           forKeyPath:kPlaybackLikelyToKeepUp
+                              options:NSKeyValueObservingOptionNew
+                              context:nil];
+    [_playerItemKVO safelyAddObserver:self
+                           forKeyPath:kLoadedTimeRanges
+                              options:NSKeyValueObservingOptionNew
+                              context:nil];
+    [_playerItemKVO safelyAddObserver:self
+                           forKeyPath:kPresentationSize
+                              options:NSKeyValueObservingOptionNew
+                              context:nil];
+    
+    /*
+     You must maintain a strong reference to the returned value as long as you want the time observer to be invoked by the player.
+     You must pair each invocation of this method with a corresponding call to removeTimeObserver(_:). Releasing the observer object without invoking removeTimeObserver(_:) results in undefined behavior.
+     The system invokes the block periodically at the interval specified, interpreted according to the timeline of the current item.
+     It also invokes the block whenever time jumps or playback starts or stops. If the interval corresponds to a very short interval in real time, the player may invoke the block less frequently than your app requested. Even so, the player will invoke the block sufficiently often for the client to update indications of the current time appropriately in its end-user interface.
+     其实就是在里面, 定义了一个定时器, 然后返回句柄进行访问.
+     */
+    CMTime interval = CMTimeMakeWithSeconds(self.timeRefreshInterval > 0 ? self.timeRefreshInterval : 0.1, NSEC_PER_SEC);
+    @zf_weakify(self)
+    _timeObserver = [self.player addPeriodicTimeObserverForInterval:interval queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
+        @zf_strongify(self)
+        if (!self) return;
+        NSArray *loadedRanges = self.playerItem.seekableTimeRanges;
+        if (self.isPlaying && self.loadState == ZFPlayerLoadStateStalled) self.player.rate = self.rate;
+        if (loadedRanges.count > 0) {
+            if (self.playerPlayTimeChanged) self.playerPlayTimeChanged(self, self.currentTime, self.totalTime);
+        }
+    }];
+    
+    _itemEndObserver = [[NSNotificationCenter defaultCenter] addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:self.playerItem queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification * _Nonnull note) {
+        @zf_strongify(self)
+        if (!self) return;
+        self.playState = ZFPlayerPlayStatePlayStopped;
+        if (self.playerDidToEnd) self.playerDidToEnd(self);
+    }];
+}
+
+// 大量使用 KVO, 本质原因是, 视频播放, 是一个异步控制的过程 .
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if ([keyPath isEqualToString:kStatus]) {
+            if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
+                if (!self.isReadyToPlay) {
+                    self.isReadyToPlay = YES;
+                    self.loadState = ZFPlayerLoadStatePlaythroughOK;
+                    // 首次触发, 给外界一次信息.
+                    if (self.playerReadyToPlay) self.playerReadyToPlay(self, self.assetURL);
+                }
+                // 当, 视频还不能播放的时候, 可能用户会修改 seektime 的值. 那么当视频可用了, 应该进行 seek
+                if (self.seekTime) {
+                    if (self.shouldAutoPlay) [self pause];
+                    @zf_weakify(self)
+                    [self seekToTime:self.seekTime completionHandler:^(BOOL finished) {
+                        @zf_strongify(self)
+                        if (finished) {
+                            if (self.shouldAutoPlay) [self play];
+                        }
+                    }];
+                    self.seekTime = 0;
+                } else {
+                    if (self.shouldAutoPlay && self.isPlaying) [self play];
+                }
+                self.player.muted = self.muted;
+                /*
+                 The array contains NSValue objects containing a CMTimeRange value indicating the times ranges to which the player item can seek. The time ranges returned may be discontinuous.
+                 */
+                NSArray *loadedRanges = self.playerItem.seekableTimeRanges;
+                if (loadedRanges.count > 0) {
+                    if (self.playerPlayTimeChanged) self.playerPlayTimeChanged(self, self.currentTime, self.totalTime);
+                }
+            } else if (self.player.currentItem.status == AVPlayerItemStatusFailed) {
+                // 失败了, 通知外界. 主要是 controlView 的控制.
+                self.playState = ZFPlayerPlayStatePlayFailed;
+                self->_isPlaying = NO;
+                NSError *error = self.player.currentItem.error;
+                if (self.playerPlayFailed) self.playerPlayFailed(self, error);
+            }
+        } else if ([keyPath isEqualToString:kPlaybackBufferEmpty]) {
+            //
+            if (self.playerItem.playbackBufferEmpty) {
+                self.loadState = ZFPlayerLoadStateStalled;
+                [self bufferingSomeSecond];
+            }
+        } else if ([keyPath isEqualToString:kPlaybackLikelyToKeepUp]) {
+            /*
+             当缓存良好了之后, 这个值改变, 提示可以进行播放.
+             */
+            if (self.playerItem.playbackLikelyToKeepUp) {
+                self.loadState = ZFPlayerLoadStatePlayable;
+                if (self.isPlaying) [self.player play];
+            }
+        } else if ([keyPath isEqualToString:kLoadedTimeRanges]) {
+            NSTimeInterval bufferTime = [self availableDuration];
+            self->_bufferTime = bufferTime;
+            if (self.playerBufferTimeChanged) self.playerBufferTimeChanged(self, bufferTime);
+        } else if ([keyPath isEqualToString:kPresentationSize]) {
+            // 这个值, 会
+            self.presentationSize = self.playerItem.presentationSize;
+        } else {
+            [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+        }
+    });
 }
 
 /// Playback speed switching method
@@ -307,115 +463,6 @@ static NSString *const kPresentationSize         = @"presentationSize";
     });
 }
 
-- (void)startAssetItemObserve {
-    [_playerItemKVO safelyRemoveAllObservers];
-    _playerItemKVO = [[ZFKVOController alloc] initWithTarget:_playerItem];
-    [_playerItemKVO safelyAddObserver:self
-                           forKeyPath:kStatus
-                              options:NSKeyValueObservingOptionNew
-                              context:nil];
-    [_playerItemKVO safelyAddObserver:self
-                           forKeyPath:kPlaybackBufferEmpty
-                              options:NSKeyValueObservingOptionNew
-                              context:nil];
-    [_playerItemKVO safelyAddObserver:self
-                           forKeyPath:kPlaybackLikelyToKeepUp
-                              options:NSKeyValueObservingOptionNew
-                              context:nil];
-    [_playerItemKVO safelyAddObserver:self
-                           forKeyPath:kLoadedTimeRanges
-                              options:NSKeyValueObservingOptionNew
-                              context:nil];
-    [_playerItemKVO safelyAddObserver:self
-                           forKeyPath:kPresentationSize
-                              options:NSKeyValueObservingOptionNew
-                              context:nil];
-    
-    CMTime interval = CMTimeMakeWithSeconds(self.timeRefreshInterval > 0 ? self.timeRefreshInterval : 0.1, NSEC_PER_SEC);
-    @zf_weakify(self)
-    _timeObserver = [self.player addPeriodicTimeObserverForInterval:interval queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
-        @zf_strongify(self)
-        if (!self) return;
-        NSArray *loadedRanges = self.playerItem.seekableTimeRanges;
-        if (self.isPlaying && self.loadState == ZFPlayerLoadStateStalled) self.player.rate = self.rate;
-        if (loadedRanges.count > 0) {
-            if (self.playerPlayTimeChanged) self.playerPlayTimeChanged(self, self.currentTime, self.totalTime);
-        }
-    }];
-    
-    _itemEndObserver = [[NSNotificationCenter defaultCenter] addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:self.playerItem queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification * _Nonnull note) {
-        @zf_strongify(self)
-        if (!self) return;
-        self.playState = ZFPlayerPlayStatePlayStopped;
-        if (self.playerDidToEnd) self.playerDidToEnd(self);
-    }];
-}
-
-// 大量使用 KVO, 本质原因是, 视频播放, 是一个异步控制的过程 .
-- (void)observeValueForKeyPath:(NSString *)keyPath
-                      ofObject:(id)object
-                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if ([keyPath isEqualToString:kStatus]) {
-            if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
-                if (!self.isReadyToPlay) {
-                    self.isReadyToPlay = YES;
-                    self.loadState = ZFPlayerLoadStatePlaythroughOK;
-                    // 首次触发, 给外界一次信息.
-                    if (self.playerReadyToPlay) self.playerReadyToPlay(self, self.assetURL);
-                }
-                // 当, 视频还不能播放的时候, 可能用户会修改 seektime 的值. 那么当视频可用了, 应该进行 seek
-                if (self.seekTime) {
-                    if (self.shouldAutoPlay) [self pause];
-                    @zf_weakify(self)
-                    [self seekToTime:self.seekTime completionHandler:^(BOOL finished) {
-                        @zf_strongify(self)
-                        if (finished) {
-                            if (self.shouldAutoPlay) [self play];
-                        }
-                    }];
-                    self.seekTime = 0;
-                } else {
-                    if (self.shouldAutoPlay && self.isPlaying) [self play];
-                }
-                self.player.muted = self.muted;
-                /*
-                 The array contains NSValue objects containing a CMTimeRange value indicating the times ranges to which the player item can seek. The time ranges returned may be discontinuous.
-                 */
-                NSArray *loadedRanges = self.playerItem.seekableTimeRanges;
-                if (loadedRanges.count > 0) {
-                    if (self.playerPlayTimeChanged) self.playerPlayTimeChanged(self, self.currentTime, self.totalTime);
-                }
-            } else if (self.player.currentItem.status == AVPlayerItemStatusFailed) {
-                self.playState = ZFPlayerPlayStatePlayFailed;
-                self->_isPlaying = NO;
-                NSError *error = self.player.currentItem.error;
-                if (self.playerPlayFailed) self.playerPlayFailed(self, error);
-            }
-        } else if ([keyPath isEqualToString:kPlaybackBufferEmpty]) {
-            // When the buffer is empty
-            if (self.playerItem.playbackBufferEmpty) {
-                self.loadState = ZFPlayerLoadStateStalled;
-                [self bufferingSomeSecond];
-            }
-        } else if ([keyPath isEqualToString:kPlaybackLikelyToKeepUp]) {
-            // When the buffer is good
-            if (self.playerItem.playbackLikelyToKeepUp) {
-                self.loadState = ZFPlayerLoadStatePlayable;
-                if (self.isPlaying) [self.player play];
-            }
-        } else if ([keyPath isEqualToString:kLoadedTimeRanges]) {
-            NSTimeInterval bufferTime = [self availableDuration];
-            self->_bufferTime = bufferTime;
-            if (self.playerBufferTimeChanged) self.playerBufferTimeChanged(self, bufferTime);
-        } else if ([keyPath isEqualToString:kPresentationSize]) {
-            self.presentationSize = self.playerItem.presentationSize;
-        } else {
-            [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
-        }
-    });
-}
-
 #pragma mark - getter
 
 - (ZFPlayerView *)view {
@@ -435,6 +482,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
     return _rate == 0 ?1:_rate;
 }
 
+// 通过这个属性, 来判断 PlayerItem 当前的状态, 是否是可播放.
 - (NSTimeInterval)totalTime {
     NSTimeInterval sec = CMTimeGetSeconds(self.player.currentItem.duration);
     if (isnan(sec)) {
@@ -467,7 +515,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
 - (void)setAssetURL:(NSURL *)assetURL {
     if (self.player) [self stop];
     _assetURL = assetURL;
-    [self prepareToPlay];
+    [self resetPlayerAndAutoplay];
 }
 
 - (void)setRate:(float)rate {
@@ -482,6 +530,9 @@ static NSString *const kPresentationSize         = @"presentationSize";
     self.player.muted = muted;
 }
 
+/*
+ 更改显示的格式, 其实就是修改, 对应的 AVPlayerLayer 的显示 videoGravity 属性.
+ */
 - (void)setScalingMode:(ZFPlayerScalingMode)scalingMode {
     _scalingMode = scalingMode;
     ZFPlayerPresentView *presentView = (ZFPlayerPresentView *)self.view.playerView;

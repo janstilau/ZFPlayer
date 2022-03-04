@@ -144,6 +144,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     
     self.currentPlayerManager.playerPlayTimeChanged = ^(id<ZFPlayerMediaPlayback>  _Nonnull asset, NSTimeInterval currentTime, NSTimeInterval duration) {
         @zf_strongify(self)
+        // 当前播放时间变化, 主要是进行 ControlView 的更新操作.
         if (self.playerPlayTimeChanged) self.playerPlayTimeChanged(asset,currentTime,duration);
         if ([self.controlView respondsToSelector:@selector(videoPlayer:currentTime:totalTime:)]) {
             [self.controlView videoPlayer:self currentTime:currentTime totalTime:duration];
@@ -154,6 +155,8 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     };
     
     self.currentPlayerManager.playerBufferTimeChanged = ^(id<ZFPlayerMediaPlayback>  _Nonnull asset, NSTimeInterval bufferTime) {
+        
+        // 缓冲改变之后, 主要的是修改 ControlView 的值. 
         @zf_strongify(self)
         if ([self.controlView respondsToSelector:@selector(videoPlayer:bufferTime:)]) {
             [self.controlView videoPlayer:self bufferTime:bufferTime];
@@ -202,7 +205,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     
     self.currentPlayerManager.presentationSizeChanged = ^(id<ZFPlayerMediaPlayback>  _Nonnull asset, CGSize size){
         // 当, AVItem 获取到尺寸之后, 会到达这.
-        // orientationObserver.fullScreenMode 改变, 会影响到全屏的时候, 弹出方式. 
+        // 这个方法最主要的动作, 就是修改 orientationObserver.fullScreenMode 的值, 这个值会影响到全屏显示的时候, 全屏的效果. 
         @zf_strongify(self)
         self.orientationObserver.presentationSize = size;
         if (self.orientationObserver.fullScreenMode == ZFFullScreenModeAutomatic) {

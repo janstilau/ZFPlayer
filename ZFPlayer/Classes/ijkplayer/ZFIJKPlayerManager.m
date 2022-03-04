@@ -167,7 +167,7 @@
         [self.player.view removeFromSuperview];
         self.player = nil;
     }
-
+    
     self.player = [[IJKFFMoviePlayerController alloc] initWithContentURL:self.assetURL withOptions:self.options];
     self.player.shouldAutoplay = self.shouldAutoPlay;
     [self.player prepareToPlay];
