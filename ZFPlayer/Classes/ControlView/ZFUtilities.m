@@ -51,6 +51,7 @@
     return image;
 }
 
+// 必须使用这种方式进行 Img 的加载. 
 + (NSBundle *)bundle {
     static NSBundle *bundle = nil;
     static dispatch_once_t onceToken;

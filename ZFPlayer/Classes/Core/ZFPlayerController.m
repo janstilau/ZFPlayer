@@ -110,16 +110,44 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     return player;
 }
 
-- (void)setupPlayProgressCallbacks {
+- (void)setCurrentPlayerManager:(id<ZFPlayerMediaPlayback>)currentPlayerManager {
+    if (!currentPlayerManager) return;
+    // 先做原来的清理工作.
+    // isPreparedToPlay 为 True, 代表着已经做完了控制器的构建, 监听等一系列的工作.
+    if (_currentPlayerManager.isPreparedToPlay) {
+        [_currentPlayerManager stop];
+        [_currentPlayerManager.view removeFromSuperview];
+        // 将, 各种功能封装到类里面的好处. 在这里体现出来了.
+        [self removeDeviceOrientationObserver];
+        [self.gestureControl removeGestureToView:self.currentPlayerManager.view];
+    }
+    _currentPlayerManager = currentPlayerManager;
+    self.gestureControl.disableTypes = self.disableGestureTypes;
+    [self.gestureControl addGestureToView:currentPlayerManager.view];
+    [self setupPlayProcessCallbacks];
+    self.controlView.player = self;
+    [self layoutPlayerSubViews];
+    if (currentPlayerManager.isPreparedToPlay) {
+        [self addDeviceOrientationObserver];
+    }
+    [self.orientationObserver updateRotateView:currentPlayerManager.view containerView:self.containerView];
+}
+
+- (void)setupPlayProcessCallbacks {
     // Player 的各种状态改变, 主要的是进行 ControlView 的状态改变.
     @zf_weakify(self)
     self.currentPlayerManager.playerPrepareToPlay = ^(id<ZFPlayerMediaPlayback>  _Nonnull asset, NSURL * _Nonnull assetURL) {
         @zf_strongify(self)
+        // 各个播放视频存储了原来的播放位置.
+        // 在下次滑到之后, 进行同步.
+        // B 站则是在服务器端进行了存储.
         if (self.resumePlayRecord && [_zfPlayRecords valueForKey:assetURL.absoluteString]) {
             NSTimeInterval seekTime = [_zfPlayRecords valueForKey:assetURL.absoluteString].doubleValue;
             self.currentPlayerManager.seekTime = seekTime;
         }
+        // 当视频可播放之后, 进行了各种通知的监听.
         [self.notification addNotification];
+        // 当视频可播放之后, 进行了 Device 的旋转监听.
         [self addDeviceOrientationObserver];
         if (self.scrollView) {
             self.scrollView.zf_stopPlay = NO;
@@ -142,22 +170,23 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
         if (self.viewControllerDisappear) self.pauseByEvent = YES;
     };
     
+    // 当前播放时间变化, 主要是进行 ControlView 的更新操作.
     self.currentPlayerManager.playerPlayTimeChanged = ^(id<ZFPlayerMediaPlayback>  _Nonnull asset, NSTimeInterval currentTime, NSTimeInterval duration) {
         @zf_strongify(self)
-        // 当前播放时间变化, 主要是进行 ControlView 的更新操作.
         if (self.playerPlayTimeChanged) self.playerPlayTimeChanged(asset,currentTime,duration);
         if ([self.controlView respondsToSelector:@selector(videoPlayer:currentTime:totalTime:)]) {
             [self.controlView videoPlayer:self currentTime:currentTime totalTime:duration];
         }
+        // 每个视频的当前播放时间的记录.
         if (self.currentPlayerManager.assetURL.absoluteString) {
             [_zfPlayRecords setValue:@(currentTime) forKey:self.currentPlayerManager.assetURL.absoluteString];
         }
     };
     
+    // 缓冲改变之后, 主要的是修改 ControlView 的值.
     self.currentPlayerManager.playerBufferTimeChanged = ^(id<ZFPlayerMediaPlayback>  _Nonnull asset, NSTimeInterval bufferTime) {
-        
-        // 缓冲改变之后, 主要的是修改 ControlView 的值. 
         @zf_strongify(self)
+        // 效果就是, 当前播放指示块后面的 Buffer 的进度条变化.
         if ([self.controlView respondsToSelector:@selector(videoPlayer:bufferTime:)]) {
             [self.controlView videoPlayer:self bufferTime:bufferTime];
         }
@@ -186,6 +215,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     
     self.currentPlayerManager.playerDidToEnd = ^(id  _Nonnull asset) {
         @zf_strongify(self)
+        // 更新视频当前时间记录.
         if (self.currentPlayerManager.assetURL.absoluteString) {
             [_zfPlayRecords setValue:@(0) forKey:self.currentPlayerManager.assetURL.absoluteString];
         }
@@ -205,11 +235,11 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     
     self.currentPlayerManager.presentationSizeChanged = ^(id<ZFPlayerMediaPlayback>  _Nonnull asset, CGSize size){
         // 当, AVItem 获取到尺寸之后, 会到达这.
-        // 这个方法最主要的动作, 就是修改 orientationObserver.fullScreenMode 的值, 这个值会影响到全屏显示的时候, 全屏的效果. 
+        // 这个方法最主要的动作, 就是修改 orientationObserver.fullScreenMode 的值, 这个值会影响到全屏显示的时候, 全屏的效果.
         @zf_strongify(self)
         self.orientationObserver.presentationSize = size;
         if (self.orientationObserver.fullScreenMode == ZFFullScreenModeAutomatic) {
-            // 在这里, 进行了 orientationObserver.fullScreenMode 的改变. 
+            // 在这里, 进行了 orientationObserver.fullScreenMode 的改变.
             if (size.width > size.height) {
                 self.orientationObserver.fullScreenMode = ZFFullScreenModeLandscape;
             } else {
@@ -294,30 +324,6 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
         _smallFloatView.hidden = YES;
     }
     return _smallFloatView;
-}
-
-#pragma mark - setter
-
-- (void)setCurrentPlayerManager:(id<ZFPlayerMediaPlayback>)currentPlayerManager {
-    if (!currentPlayerManager) return;
-    // 先做原来的清理工作.
-    if (_currentPlayerManager.isPreparedToPlay) {
-        [_currentPlayerManager stop];
-        [_currentPlayerManager.view removeFromSuperview];
-        // 将, 各种功能封装到类里面的好处. 在这里体现出来了.
-        [self removeDeviceOrientationObserver];
-        [self.gestureControl removeGestureToView:self.currentPlayerManager.view];
-    }
-    _currentPlayerManager = currentPlayerManager;
-    self.gestureControl.disableTypes = self.disableGestureTypes;
-    [self.gestureControl addGestureToView:currentPlayerManager.view];
-    [self setupPlayProgressCallbacks];
-    self.controlView.player = self;
-    [self layoutPlayerSubViews];
-    if (currentPlayerManager.isPreparedToPlay) {
-        [self addDeviceOrientationObserver];
-    }
-    [self.orientationObserver updateRotateView:currentPlayerManager.view containerView:self.containerView];
 }
 
 - (void)setContainerView:(UIView *)containerView {
@@ -424,6 +430,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
         [self.currentPlayerManager.view removeFromSuperview];
     }
     if (self.scrollView) self.scrollView.zf_stopPlay = YES;
+    // 明确停止播放之后, 取消了各种通知的监听.
     [self.notification removeNotification];
     [self.orientationObserver removeDeviceOrientationObserver];
 }
@@ -1118,7 +1125,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
                 }
             } else {  /// add to window
                 if (!self.isSmallFloatViewShow) {
-                    // 小窗的播放, 直接写到了 Player 的内部. 
+                    // 小窗的播放, 直接写到了 Player 的内部.
                     [self addPlayerViewToSmallFloatView];
                 }
             }

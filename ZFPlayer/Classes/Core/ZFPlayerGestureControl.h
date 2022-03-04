@@ -51,7 +51,8 @@ typedef NS_OPTIONS(NSUInteger, ZFPlayerDisablePanMovingDirection) {
 
 
 // 给一个 View, 配置 Gesture 的过程太复杂了. 并且是可以复用的.
-// 直接使用一个工具类, 
+// 直接使用一个工具类,
+// 这里面的大部分放大, 其实是给 ControlView 使用的.
 @interface ZFPlayerGestureControl : NSObject
 
 /// Gesture condition callback.

@@ -61,8 +61,6 @@
 // Whether automatic screen rotation is supported.
 - (BOOL)shouldAutorotate {
     NSLog(@"从 TabVC 获取 shouldAutoRotate %@", [self viewControllerRotation]);
-    return YES;
-    
     return [[self viewControllerRotation] shouldAutorotate];
 }
 

@@ -152,7 +152,14 @@ static NSString *kIdentifier = @"kIdentifier";
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
     [scrollView zf_scrollViewDidEndDraggingWillDecelerate:decelerate];
 }
-
+/*
+ Tells the delegate that the scroll view scrolled to the top of the content.
+ 
+ The scroll view sends this message when it finishes scrolling to the top of the content.
+ It might call it immediately if the top of the content is already shown.
+ For the scroll-to-top gesture (a tap on the status bar) to be effective, the scrollsToTop property of the UIScrollView must be set to YES.
+ 这个代理方法, 之前使用的很少.
+ */
 - (void)scrollViewDidScrollToTop:(UIScrollView *)scrollView {
     [scrollView zf_scrollViewDidScrollToTop];
 }

@@ -20,10 +20,6 @@
 }
 
 /*
- 
- */
-
-/*
  This method returns the total set of interface orientations supported by the app.
  When determining whether to rotate a particular view controller, the orientations returned by this method are intersected with the orientations supported by the root view controller or topmost presented view controller.
  The app and view controller must agree before the rotation is allowed.

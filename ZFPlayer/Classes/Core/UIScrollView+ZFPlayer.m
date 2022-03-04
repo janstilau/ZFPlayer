@@ -19,12 +19,23 @@
 #pragma mark - public method
 
 // 就是在 TableView, CollectionView 里面, 取值
+// 在 iOS 15 之前, 可以用这个值, 当做是 cell 划出的标志.
 - (UIView *)zf_getCellForIndexPath:(NSIndexPath *)indexPath {
     if ([self _isTableView]) {
         UITableView *tableView = (UITableView *)self;
+        /*
+         The cell object at the corresponding index path.
+         In versions of iOS earlier than iOS 15, this method returns nil if the cell isn’t visible or if indexPath is out of range.
+         In iOS 15 and later, this method returns a non-nil cell if the table view retains a prepared cell at the specified index path, even if the cell isn’t currently visible.
+         */
         UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
         return cell;
     } else if ([self _isCollectionView]) {
+        /*
+         The cell object at the corresponding index path.
+         In versions of iOS earlier than iOS 15, this method returns nil if the cell isn't visible or if indexPath is out of range.
+         In iOS 15 and later, this method returns a non-nil cell if the collection view retains a prepared cell at the specified index path, even if the cell isn't currently visible.
+         */
         UICollectionView *collectionView = (UICollectionView *)self;
         UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
         return cell;
@@ -65,6 +76,8 @@
                   animateDuration:(NSTimeInterval)duration
                 completionHandler:(void (^ __nullable)(void))completionHandler {
     BOOL animated = duration > 0.0;
+    
+    // 还是使用 TableView, CollectionView 的 scroll 方法, 在内部, 对于 Position 进行了转化.
     if ([self _isTableView]) {
         UITableView *tableView = (UITableView *)self;
         UITableViewScrollPosition tableScrollPosition = UITableViewScrollPositionNone;
@@ -114,12 +127,18 @@
             [collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:collectionScrollPosition animated:animated];
         }
     }
+    
     // 这里的回调, 简单粗暴地时候了延时调用.
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (completionHandler) completionHandler();
     });
 }
-
+/*
+ - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+     [scrollView zf_scrollViewDidEndDecelerating];
+ }
+ 应该在 scrollViewDidEndDecelerating 代理方法里面调用.
+ */
 - (void)zf_scrollViewDidEndDecelerating {
     BOOL scrollToScrollStop = !self.tracking && !self.dragging && !self.decelerating;
     if (scrollToScrollStop) {
@@ -387,6 +406,8 @@
  Find the playing cell while the scrollDirection is vertical.
  */
 - (void)_findCorrectCellWhenScrollViewDirectionVertical:(void (^ __nullable)(NSIndexPath *indexPath))handler {
+    // 必须是自动播放的, 必须是 cell 这种类型.
+    // ScrollView 里面, 大部分的都和自动播放有关. 
     if (!self.zf_shouldAutoPlay) return;
     if (self.zf_containerType == ZFPlayerContainerTypeView) return;
     

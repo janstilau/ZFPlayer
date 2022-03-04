@@ -305,7 +305,6 @@
 - (void)enterPortraitFullScreen:(BOOL)fullScreen animated:(BOOL)animated completion:(void(^ __nullable)(void))completion {
     self.fullScreen = fullScreen;
     if (fullScreen) {
-        
         self.portraitViewController.contentView = self.playerView;
         self.portraitViewController.containerView = self.containerView;
         self.portraitViewController.duration = self.duration;

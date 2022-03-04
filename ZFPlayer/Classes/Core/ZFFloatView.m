@@ -38,7 +38,7 @@
     CGPoint newCenter = CGPointMake(recognizer.view.center.x + translation.x,
                                     recognizer.view.center.y + translation.y);
     
-    // 下面的判断, 就是别超过去边界. 
+    // 下面的判断, 就是别超过去边界.
     // Top margin limit.
     newCenter.y = MAX(recognizer.view.frame.size.height/2 + self.safeInsets.top, newCenter.y);
     
