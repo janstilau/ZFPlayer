@@ -61,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 锁定屏幕按钮
 @property (nonatomic, strong, readonly) UIButton *lockBtn;
 
-/// 播放器
+// 直接在 ControlView 里面, 拿到 Player 进行控制.
 @property (nonatomic, weak) ZFPlayerController *player;
 
 /// slider滑动中

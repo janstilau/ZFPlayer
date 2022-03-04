@@ -338,7 +338,7 @@
     }
 }
 
-/// 双击手势事件
+// 在各个 ControlView 里面, 有着对于播放的控制逻辑. 移交给了各个 ControlView 了.
 - (void)gestureDoubleTapped:(ZFPlayerGestureControl *)gestureControl {
     if (self.player.isFullScreen) {
         [self.landScapeControlView playOrPause];
@@ -357,6 +357,8 @@
 /// 滑动中手势事件
 - (void)gestureChangedPan:(ZFPlayerGestureControl *)gestureControl panDirection:(ZFPanDirection)direction panLocation:(ZFPanLocation)location withVelocity:(CGPoint)velocity {
     if (direction == ZFPanDirectionH) {
+        
+        // 通过, velocity 的值, 达到了累加快进的目的.
         // 每次滑动需要叠加时间
         self.sumTime += velocity.x / 200;
         // 需要限定sumTime的范围

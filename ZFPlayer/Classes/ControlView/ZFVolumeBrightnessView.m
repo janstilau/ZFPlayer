@@ -98,6 +98,8 @@
     self.iconImageView.image = playerImage;
     self.hidden = NO;
     self.alpha = 1;
+    
+    // 都是使用这种方式, 来达到自动隐藏的目的的. 
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideTipView) object:nil];
     [self performSelector:@selector(hideTipView) withObject:nil afterDelay:1.5];
 }
