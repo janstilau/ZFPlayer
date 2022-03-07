@@ -29,12 +29,10 @@
     switch (self.type) {
         case ZFPresentTransitionTypePresent: {
             [self presentAnimation:transitionContext];
-        }
-            break;
+        } break;
         case ZFPresentTransitionTypeDismiss: {
             [self dismissAnimation:transitionContext];
-        }
-            break;
+        } break;
     }
 }
 
@@ -55,6 +53,7 @@
             fromVC = tabBar.selectedViewController;
         }
     }
+    
     UIView *containerView = [transitionContext containerView];
     [containerView addSubview:toVC.view];
     [containerView addSubview:self.contentView];
@@ -68,6 +67,7 @@
     toVC.view.alpha = 1;
     [self.delagate zf_orientationWillChange:YES];
     
+    // 目标 Target 的所在位置, 应该提早进行存储.
     CGRect toRect = self.contentFullScreenRect;
     self.transiting = YES;
     [UIView animateWithDuration:[self transitionDuration:transitionContext] animations:^{

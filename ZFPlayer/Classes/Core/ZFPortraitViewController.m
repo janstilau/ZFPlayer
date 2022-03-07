@@ -26,6 +26,8 @@
          The system ignores this property’s value for a view controller presented fullscreen.
          */
         self.modalPresentationCapturesStatusBarAppearance = YES;
+        
+        //
         _statusBarStyle = UIStatusBarStyleLightContent;
         _statusBarAnimation = UIStatusBarAnimationSlide;
     }
@@ -83,6 +85,9 @@
 
 #pragma mark - transition delegate
 
+/*
+ Present 的 animator.
+ */
 - (id<UIViewControllerAnimatedTransitioning>)animationControllerForPresentedController:(UIViewController *)presented presentingController:(UIViewController *)presenting sourceController:(UIViewController *)source {
     [self.transition transitionWithTransitionType:ZFPresentTransitionTypePresent contentView:self.contentView containerView:self.containerView];
     return self.transition;
@@ -106,6 +111,7 @@
     return self.statusBarHidden;
 }
 
+// 因为这是 Present, 所以在 VC 里面自定义控制就可以了.
 - (UIStatusBarStyle)preferredStatusBarStyle {
     return self.statusBarStyle;
 }
@@ -114,6 +120,7 @@
     return self.statusBarAnimation;
 }
 
+// 只能竖屏.
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
     return UIInterfaceOrientationMaskPortrait;
 }

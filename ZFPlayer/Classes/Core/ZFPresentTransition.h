@@ -18,6 +18,7 @@ typedef NS_ENUM(NSUInteger, ZFPresentTransitionType) {
 
 @property (nonatomic, assign) NSTimeInterval duration;
 
+// 这里设计的不好, 不如在 VC 里面定义两个对象.
 - (void)transitionWithTransitionType:(ZFPresentTransitionType)type
                          contentView:(UIView *)contentView
                        containerView:(UIView *)containerView;

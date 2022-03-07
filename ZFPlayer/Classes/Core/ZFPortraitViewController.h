@@ -3,6 +3,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/*
+ Portrait 的全屏, 就是使用一个 Present VC 里达到效果.
+ 将视频播放的 View, 添加到这个 VC 上. 
+ */
 @interface ZFPortraitViewController : UIViewController
 
 /// The block invoked When player will rotate.

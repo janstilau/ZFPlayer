@@ -9,15 +9,17 @@
 /*
  这个类, 封装的是对于 AVPlayer 的管理. 所以, 实际上, 是真正的视频播放控制类.
  */
+
 @interface ZFAVPlayerManager : NSObject <ZFPlayerMediaPlayback>
 
 /*
+ 之前, LocalPlayer 还要自己专门写一个, 实际山, ZFPlayerManager 是可以处理本地视频的.
+ AVPlayer 将本地, 远端视频的处理, 是包装到自己的内部的.
+ 
  An asset that represents media at a local or remote URL.
  
  An asset is a container object for one or more instances of AVAssetTrack that models the uniformly typed tracks of media.
  Audio and video tracks are the most common track types, but assets may also contain supplementary tracks, such as closed captions, subtitles, and timed metadata.
- 
- A diagram of four rectangular items. The rectangle on the left represents AVAsset. A line connects it to three stacked rectangles on the right that represent AVAssetTrack (Video), AVAssetTrack (Audio), and AVAssetTrack (Subtitles) from top to bottom.
  
  You load the tracks for an asset by asynchronously loading its tracks property. In some cases, you may want to perform operations on a subset of an asset’s tracks rather than on its complete collection. For those situations, an asset provides methods to retrieve subsets of tracks according to particular criteria, such as identifier, media type, or characteristic.
  */

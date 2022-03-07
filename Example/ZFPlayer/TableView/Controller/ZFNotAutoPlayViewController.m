@@ -21,6 +21,7 @@ static NSString *kIdentifier = @"kIdentifier";
 @interface ZFNotAutoPlayViewController () <UITableViewDelegate,UITableViewDataSource,ZFTableViewCellDelegate>
 
 @property (nonatomic, strong) UITableView *tableView;
+// Player, ControlView 都可以进行自定义, 这是比较好的设计.
 @property (nonatomic, strong) ZFPlayerController *player;
 @property (nonatomic, strong) ZFPlayerControlView *controlView;
 @property (nonatomic, strong) NSMutableArray *dataSource;
@@ -35,18 +36,29 @@ static NSString *kIdentifier = @"kIdentifier";
     [self.view addSubview:self.tableView];
     [self requestData];
 
-    /// playerManager
+    /*
+     ZFAVPlayerManager 是对于播放器的封装.
+     主要进行 Asset 的播放控制.
+     这里作者也进行了 ZFIJKPlayerManager 的封装.
+     
+     ZFPlayerController 中, 是面向 Player Interface 编程, 有扩展度.
+     */
     ZFAVPlayerManager *playerManager = [[ZFAVPlayerManager alloc] init];
 //    ZFIJKPlayerManager *playerManager = [[ZFIJKPlayerManager alloc] init];
     
-    /// player的tag值必须在cell里设置
-    self.player = [ZFPlayerController playerWithScrollView:self.tableView playerManager:playerManager containerViewTag:kPlayerViewTag];
+    // 必须在 Cell 里面, 设置好 Container 的 Tag 值. 这里, 作者使用 Tag 进行 Cell 上的 ContainerView 的获取. 是一个比较不漂亮的实现方式.
+    self.player = [ZFPlayerController playerWithScrollView:self.tableView
+                                             playerManager:playerManager
+                                          containerViewTag:kPlayerViewTag];
+    // ControlView 也可以自定义.
     self.player.controlView = self.controlView;
     self.player.shouldAutoPlay = NO;
     
     /// 1.0是完全消失的时候
     self.player.playerDisapperaPercent = 1.0;
 
+    // 检测到 Device 的方向变化, 会触发 orientationWillChange
+    // 然后才是强制进行 Window 的 Oritentation 的变化, allowOrentitaionRotation 的修改, 会影响到了 AppDelegate 里面的实现, 影响到是否应该进行 Window 的旋转.
     @zf_weakify(self)
     self.player.orientationWillChange = ^(ZFPlayerController * _Nonnull player, BOOL isFullScreen) {
         kAPPDelegate.allowOrentitaionRotation = isFullScreen;
@@ -54,6 +66,7 @@ static NSString *kIdentifier = @"kIdentifier";
     
     self.player.playerDidToEnd = ^(id  _Nonnull asset) {
         @zf_strongify(self)
+        // 播放结束之后, 不进行下一个 Asset 的播放.
         [self.player stopCurrentPlayingCell];
     };
 }
@@ -108,6 +121,8 @@ static NSString *kIdentifier = @"kIdentifier";
 
 #pragma mark - UIScrollViewDelegate 列表播放必须实现
 
+// 在 ScrollView 里面, 会不断地查找 PlayingIndexPath, ShouldIndexPath 的查找.
+// 如果设置了相关的 ScrollView 的 Block, 那么就会因为下方的调用, 触发那些 Block.
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
     [scrollView zf_scrollViewDidEndDecelerating];
 }
