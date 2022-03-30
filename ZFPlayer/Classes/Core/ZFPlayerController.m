@@ -797,6 +797,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
         orientationObserver = [[ZFOrientationObserver alloc] init];
         orientationObserver.orientationWillChange = ^(ZFOrientationObserver * _Nonnull observer, BOOL isFullScreen) {
             @zf_strongify(self)
+            // 在这里, 执行了 Player 里设置的 orientationWillChange. 在这个 Block 里面, 一般是进行 AppDelegate allowOrentitaionRotation 的设置.
             if (self.orientationWillChange) self.orientationWillChange(self, isFullScreen);
             if ([self.controlView respondsToSelector:@selector(videoPlayer:orientationWillChange:)]) {
                 [self.controlView videoPlayer:self orientationWillChange:observer];
