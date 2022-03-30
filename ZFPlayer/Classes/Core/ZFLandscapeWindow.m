@@ -31,8 +31,6 @@
     [super layoutSubviews];
     static CGRect bounds;
     if (!CGRectEqualToRect(bounds, self.bounds)) {
-        NSLog(@"Saved Bounds %@", NSStringFromCGRect(bounds));
-        NSLog(@"Current Bounds %@", NSStringFromCGRect(self.bounds));
         UIView *superview = self;
         if (@available(iOS 13.0, *)) {
             superview = self.subviews.firstObject;
@@ -48,7 +46,6 @@
             }
         }];
     }
-    // 在这里, 会将 RootView 的 View 完全和 Window 进行贴合.
     bounds = self.bounds;
     self.rootViewController.view.frame = bounds;
 }

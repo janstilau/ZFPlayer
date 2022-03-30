@@ -251,9 +251,7 @@
                 containerView = self.containerView;
             }
             
-            // 在这里, 才对 Window 进行了生成操作.
             if (!self.window) {
-                // 当 Window 不存在的时候, 生成 RootViewControoler 的时候, 会调用 shouldAutorotate
                 self.window = [ZFLandscapeWindow new];
                 self.window.landscapeViewController.delegate = self;
                 if (@available(iOS 9.0, *)) {
@@ -359,7 +357,6 @@
     return NO;
 }
 
-// 将 Window 显示出来.
 - (void)showLandscapeWindow:(UIInterfaceOrientation)orientation {
     if (UIInterfaceOrientationIsLandscape(orientation)) {
         UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
@@ -369,7 +366,6 @@
         // 当, 横屏的时候, 让自己的全屏 Window 进行展示.
         if (!self.window.isKeyWindow) {
             self.window.hidden = NO;
-            NSLog(@"触发了横屏 Window 的 MakeKeyAndVisible");
             [self.window makeKeyAndVisible];
         }
     }
@@ -402,7 +398,6 @@
     [containerView addSubview:self.snapshot];
 }
 
-// 对原有的 View 进行了添加.
 - (void)relocateContentViewToOriginContainerView:(UIView *)containerView {
     [containerView addSubview:self.playerView];
     self.playerView.frame = containerView.bounds;

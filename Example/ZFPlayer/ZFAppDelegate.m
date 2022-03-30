@@ -26,7 +26,7 @@
  If you do not implement this method, the app uses the values in the UIInterfaceOrientation key of the app’s Info.plist as the default interface orientations.
  */
 - (UIInterfaceOrientationMask)application:(UIApplication *)application supportedInterfaceOrientationsForWindow:(UIWindow *)window {
-//    NSLog(@"从 Delegate 获取 支持的 InterfaceOrientation");
+    NSLog(@"从 Delegate 获取 支持的 InterfaceOrientation");
     
     if (self.allowOrentitaionRotation) {
         return UIInterfaceOrientationMaskAllButUpsideDown;
