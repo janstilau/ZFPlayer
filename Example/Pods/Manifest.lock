@@ -22,7 +22,7 @@ DEPENDENCIES:
   - ZFPlayer/All (from `../`)
 
 SPEC REPOS:
-  https://mirrors.tuna.tsinghua.edu.cn/git/CocoaPods/Specs.git:
+  https://github.com/CocoaPods/Specs.git:
     - FDFullscreenPopGesture
     - IJKMediaFramework
     - MJRefresh

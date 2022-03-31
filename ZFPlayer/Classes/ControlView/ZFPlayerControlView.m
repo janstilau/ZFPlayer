@@ -158,10 +158,6 @@
     [self.fastView addSubview:self.fastProgressView];
     [self addSubview:self.bottomPgrogress];
     [self addSubview:self.volumeBrightnessView];
-    
-    [self.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        [obj addBorderLine];
-    }];
 }
 
 - (void)autoFadeOutControlView {
